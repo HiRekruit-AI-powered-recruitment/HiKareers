@@ -5,8 +5,19 @@ import { User } from "../models/users.models.js";
 import UploadToCloudinary from "../utils/UploadToCloudinary.utils.js";
 import cloudinary from '../config/cloudinary.js';
 
+
 export const uploadUserResumes = asyncHandler(async (req, res) => {
-  const resumeFile = req.file || {};
+  if (!req.file) {
+    throw new ApiError(400, "Resume file is required");
+  }
+
+  const sequence = Number(req.body?.sequence);
+  if (![1, 2, 3].includes(sequence)) {
+    throw new ApiError(400, "Invalid resume sequence. Must be 1, 2, or 3");
+  }
+
+  const resumeFile = req.file;
+  const slotKey = String(sequence);
   console.log(req.body)
 
   const user = await User.findById(req.user._id);
@@ -14,24 +25,30 @@ export const uploadUserResumes = asyncHandler(async (req, res) => {
 
   const result = await UploadToCloudinary(
       resumeFile.buffer,
-      `user_resume/${user._id}/${req.body.sequence}`,
-      req.body.sequence
+      `user_resume/${user._id}`,
+      slotKey
     );
 
-    if (user.resumes?.[req.body.sequence]?.publicId) {
-      await cloudinary.uploader.destroy(user.resumes[req.body.sequence].publicId, {
+    if (user.resumes?.[slotKey]?.publicId) {
+      await cloudinary.uploader.destroy(user.resumes[slotKey].publicId, {
         resource_type: 'raw'
       });
     }
-    user.resumes[req.body.sequence] = {
+    user.resumes[slotKey] = {
       url: result.secure_url,
       publicId: result.public_id,
-      // fileName: resumeFile.originalname,
+      fileName: resumeFile.originalname,
       uploadedAt: new Date()
     };
 
-
   await user.save();
+
+  // Recompute profile completion using model helper
+  const profileCompleted = user.computeProfileCompleted ? user.computeProfileCompleted() : false;
+  if (user.profileCompleted !== profileCompleted) {
+    user.profileCompleted = profileCompleted;
+    await user.save();
+  }
 
   return res.status(200).json(
     new ApiResponse(200, "Resumes uploaded successfully", user.resumes)
@@ -53,6 +70,14 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
 
     if (!fullName && !email && !mobile && !highestQualification && !qualifications) {
         throw new ApiError(400, "At least one field is required to update");
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) throw new ApiError(404, 'User not found');
+
+    // Prevent changing mobile once it's verified
+    if (mobile && user.mobileVerified && mobile !== user.mobile) {
+      throw new ApiError(400, 'Cannot change mobile once verified');
     }
 
     const updateData = {};
@@ -80,6 +105,13 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
 
     if (!updatedUser) {
         throw new ApiError(404, "User not found");
+    }
+
+    // Recompute profile completion using model helper
+    const profileCompleted = updatedUser.computeProfileCompleted ? updatedUser.computeProfileCompleted() : false;
+    if (updatedUser.profileCompleted !== profileCompleted) {
+      updatedUser.profileCompleted = profileCompleted;
+      await updatedUser.save();
     }
 
     return res

@@ -8,7 +8,7 @@ import bcrypt from 'bcrypt';
 const resume = mongoose.Schema({
     url: String,
     publicId: String,
-    // fileName: String,
+    fileName: String,
     uploadedAt: {
         type: Date,
         default: Date.now
@@ -87,6 +87,8 @@ const userSchema = mongoose.Schema({
     qualifications : {
         tenth: {
             completed: { type: Boolean, default: false },
+            startYear: Number,
+            endYear: Number,
             percentage: { type: Number, min: 0, max: 100 },
             cgpa: { type: Number, min: 0, max: 10 },
             board: String,
@@ -95,6 +97,8 @@ const userSchema = mongoose.Schema({
         },
         twelfth: {
             completed: { type: Boolean, default: false },
+            startYear: Number,
+            endYear: Number,
             percentage: { type: Number, min: 0, max: 100 },
             cgpa: { type: Number, min: 0, max: 10 },
             board: String,
@@ -104,6 +108,9 @@ const userSchema = mongoose.Schema({
         },
         graduation: {
             completed: { type: Boolean, default: false },
+            courseName: String,
+            startYear: Number,
+            endYear: Number,
             percentage: { type: Number, min: 0, max: 100 },
             cgpa: { type: Number, min: 0, max: 10 },
             degree: String,
@@ -114,6 +121,9 @@ const userSchema = mongoose.Schema({
         },
         postgraduation: {
             completed: { type: Boolean, default: false },
+            courseName: String,
+            startYear: Number,
+            endYear: Number,
             percentage: { type: Number, min: 0, max: 100 },
             cgpa: { type: Number, min: 0, max: 10 },
             degree: String,
@@ -137,6 +147,33 @@ userSchema.pre('save', async function(){
         return ;
     
     this.password = await bcrypt.hash(this.password, 10)
+});
+
+// Compute whether profile is completed based on required fields and verifications
+userSchema.methods.computeProfileCompleted = function() {
+    const hasResume = (() => {
+        const r = this.resumes || {};
+        if (Array.isArray(r)) return r.length > 0;
+        return [1,2,3].some(i => !!r[i] || !!r[String(i)]);
+    })();
+
+    return Boolean(
+        this.fullName &&
+        this.mobile &&
+        this.highestQualification &&
+        hasResume &&
+        this.emailVerified &&
+        this.mobileVerified
+    );
+};
+
+// Ensure profileCompleted is kept in sync whenever user is saved
+userSchema.pre('save', function() {
+    try {
+        this.profileCompleted = this.computeProfileCompleted();
+    } catch (e) {
+        // ignore compute errors and proceed
+    }
 });
 
 userSchema.methods.generateRefreshToken = async function(){

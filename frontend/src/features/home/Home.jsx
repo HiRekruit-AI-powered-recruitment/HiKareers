@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { isAuthenticated, getCurrentUser } from '../utils/auth.js';
-import { userAPI } from '../api.js';
-import ProfileCompletionBanner from '../components/ProfileCompletionBanner.jsx';
+import { isAuthenticated, getCurrentUser } from '../../utils/auth.js';
+import { userAPI } from '../profile/api';
+import ProfileCompletionBanner from '../profile/components/ProfileCompletionBanner.jsx';
 
 export default function Home() {
   const [user, setUser] = useState(null);
@@ -39,7 +39,7 @@ export default function Home() {
       <div className="max-w-2xl w-full">
         {/* Profile Completion Banner */}
         {showCompletionBanner && !loading && <ProfileCompletionBanner />}
-        
+
         {/* Main Card */}
         <div className="card text-center">
           <div className="mb-6">

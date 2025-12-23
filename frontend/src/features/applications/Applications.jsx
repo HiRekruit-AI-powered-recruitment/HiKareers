@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { applicationAPI } from '../api';
-import { isAuthenticated } from '../utils/auth.js';
+import { applicationAPI } from './api';
+import { isAuthenticated } from '../../utils/auth.js';
 
 export default function Applications() {
   const navigate = useNavigate();
@@ -9,7 +9,7 @@ export default function Applications() {
   const [filteredApplications, setFilteredApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
   const [filters, setFilters] = useState({
     startDate: '',
     endDate: '',
@@ -37,7 +37,7 @@ export default function Applications() {
       const response = await applicationAPI.getMyApplications();
       if (response.success) {
         // Sort by updatedAt descending (most recent first)
-        const sorted = response.data.sort((a, b) => 
+        const sorted = response.data.sort((a, b) =>
           new Date(b.updatedAt) - new Date(a.updatedAt)
         );
         setApplications(sorted);
@@ -56,21 +56,21 @@ export default function Applications() {
 
     // Filter by date range
     if (filters.startDate) {
-      filtered = filtered.filter(app => 
+      filtered = filtered.filter(app =>
         new Date(app.createdAt) >= new Date(filters.startDate)
       );
     }
     if (filters.endDate) {
       const endDate = new Date(filters.endDate);
       endDate.setHours(23, 59, 59, 999);
-      filtered = filtered.filter(app => 
+      filtered = filtered.filter(app =>
         new Date(app.createdAt) <= endDate
       );
     }
 
     // Filter by status
     if (filters.status) {
-      filtered = filtered.filter(app => 
+      filtered = filtered.filter(app =>
         app.currentStatus === filters.status
       );
     }
@@ -78,7 +78,7 @@ export default function Applications() {
     // Filter by company name
     if (filters.companyName.trim()) {
       const searchTerm = filters.companyName.toLowerCase().trim();
-      filtered = filtered.filter(app => 
+      filtered = filtered.filter(app =>
         app.jobId?.company?.toLowerCase().includes(searchTerm)
       );
     }
@@ -241,8 +241,8 @@ export default function Applications() {
           </svg>
           <h3 className="text-xl font-semibold text-neutral-900 mb-2">No applications found</h3>
           <p className="text-neutral-600 mb-6">
-            {applications.length === 0 
-              ? "You haven't applied to any jobs yet." 
+            {applications.length === 0
+              ? "You haven't applied to any jobs yet."
               : "Try adjusting your filters to see more results."}
           </p>
           {applications.length === 0 && (
@@ -313,7 +313,7 @@ export default function Applications() {
                   <span className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${getStatusColor(app.currentStatus)}`}>
                     {app.currentStatus.replace('_', ' ')}
                   </span>
-                  
+
                   <div className="flex gap-2">
                     {app.resumeUrl && (
                       <a
@@ -325,7 +325,7 @@ export default function Applications() {
                         View Resume
                       </a>
                     )}
-                    
+
                     {app.currentStatus === 'APPLIED' && (
                       <button
                         onClick={() => handleWithdraw(app._id)}

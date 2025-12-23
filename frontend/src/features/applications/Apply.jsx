@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { applicationAPI, userAPI } from '../api';
-import { isAuthenticated, getCurrentUser } from '../utils/auth.js';
-import ProfileCompletionBanner from '../components/ProfileCompletionBanner.jsx';
+import { useNavigate, useParams } from 'react-router-dom';
+import { applicationAPI } from './api';
+import { userAPI } from '../profile/api';
+import { isAuthenticated, getCurrentUser } from '../../utils/auth.js';
+import ProfileCompletionBanner from '../profile/components/ProfileCompletionBanner.jsx';
 
 export default function Apply() {
   const navigate = useNavigate();
@@ -11,7 +12,7 @@ export default function Apply() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [user, setUser] = useState(null);
-  
+
   function normalizeResumes(resumes) {
     if (!resumes) return [];
     if (Array.isArray(resumes)) return resumes;
@@ -22,7 +23,7 @@ export default function Apply() {
     }
     return arr;
   }
-  
+
   const isLoggedIn = isAuthenticated();
 
   const [form, setForm] = useState({
@@ -40,6 +41,8 @@ export default function Apply() {
     selectedResumeUrl: ''
   });
 
+  const params = useParams();
+
   useEffect(() => {
     if (!isLoggedIn) {
       navigate('/login');
@@ -48,6 +51,18 @@ export default function Apply() {
     loadUserData();
   }, [isLoggedIn, navigate]);
 
+  useEffect(() => {
+    if (params?.jobId) {
+      setForm((prev) => ({ ...prev, jobId: params.jobId }));
+    }
+  }, [params?.jobId]);
+
+  function isProfileComplete(user) {
+    if (!user) return false;
+    const hasResume = normalizeResumes(user.resumes).length > 0;
+    return Boolean(user.profileCompleted || (user.fullName && user.mobile && user.highestQualification && hasResume));
+  }
+
   async function loadUserData() {
     try {
       setLoading(true);
@@ -55,7 +70,7 @@ export default function Apply() {
       if (response.success) {
         const userData = response.data;
         setUser(userData);
-        
+
         // Map highestQualification to qualifications object key
         const qualificationMap = {
           '10th': 'tenth',
@@ -63,10 +78,10 @@ export default function Apply() {
           'graduation': 'graduation',
           'postgraduation': 'postgraduation'
         };
-        
+
         const qualKey = qualificationMap[userData.highestQualification];
         const qualData = qualKey ? userData.qualifications?.[qualKey] : null;
-        
+
         // Pre-fill form with user data
         setForm((prev) => ({
           ...prev,
@@ -80,7 +95,7 @@ export default function Apply() {
             yearOfPassing: qualData?.yearOfPassing || ''
           }
         }));
-        
+
         // Set first resume as default if available
         const firstResume = normalizeResumes(userData.resumes)[0];
         if (firstResume && firstResume.url) {
@@ -249,7 +264,7 @@ export default function Apply() {
           {/* Personal Information Section */}
           <div className="pt-6 border-t border-neutral-200">
             <h2 className="text-xl font-semibold mb-4">Personal Information</h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="label font-semibold">Full Name *</label>
@@ -298,7 +313,7 @@ export default function Apply() {
           {/* Education Details Section */}
           <div className="pt-6 border-t border-neutral-200">
             <h2 className="text-xl font-semibold mb-4">Education Details (Optional)</h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="label font-semibold">Highest Qualification</label>
@@ -367,7 +382,7 @@ export default function Apply() {
           {/* Academic Details Section */}
           <div className="pt-6 border-t border-neutral-200">
             <h2 className="text-xl font-semibold mb-4">Academic Details</h2>
-            
+
             <div className="space-y-2">
               <label className="label font-semibold">Backlogs *</label>
               <select
@@ -388,7 +403,7 @@ export default function Apply() {
           {/* Resume Selection Section */}
           <div className="pt-6 border-t border-neutral-200">
             <h2 className="text-xl font-semibold mb-4">Select Resume *</h2>
-            
+
             {normalizeResumes(user?.resumes).length > 0 ? (
               <div className="space-y-3">
                 {normalizeResumes(user?.resumes).map((resume, index) => (
@@ -409,11 +424,11 @@ export default function Apply() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <svg className="w-5 h-5 text-neutral-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M4 4a2 2 0 012-2h6a1 1 0 00-1-1H6a3 3 0 00-3 3v10a3 3 0 003 3h6a3 3 0 003-3V9a1 1 0 10-2 0v5a1 1 0 11-2 0V4z"/>
+                          <path d="M4 4a2 2 0 012-2h6a1 1 0 00-1-1H6a3 3 0 00-3 3v10a3 3 0 003 3h6a3 3 0 003-3V9a1 1 0 10-2 0v5a1 1 0 11-2 0V4z" />
                         </svg>
                         <p className="font-medium text-neutral-900">Resume {index + 1}</p>
                       </div>
-                      <p className="text-sm text-neutral-600">{resume.fileName}</p>
+                      <p className="text-sm text-neutral-600">{resume.fileName || 'Resume PDF'}</p>
                       <p className="text-xs text-neutral-500 mt-1">
                         Uploaded {new Date(resume.uploadedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                       </p>
@@ -434,9 +449,12 @@ export default function Apply() {
 
           {/* Submit Button */}
           <div className="pt-6 border-t border-neutral-200">
+            {!isProfileComplete(user) && (
+              <p className="text-sm text-red-600 mb-3">Complete your profile before applying. <a href="/profile/edit" className="underline">Complete profile</a></p>
+            )}
             <button
               type="submit"
-              disabled={submitting || normalizeResumes(user?.resumes).length === 0}
+              disabled={submitting || normalizeResumes(user?.resumes).length === 0 || !isProfileComplete(user)}
               className="btn btn-primary btn-lg w-full"
             >
               {submitting ? 'Submitting Application...' : 'Submit Application'}

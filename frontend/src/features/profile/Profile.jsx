@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { userAPI } from '../api';
+import { userAPI } from './api';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -65,7 +65,7 @@ export default function Profile() {
     'postgraduation': ['tenth', 'twelfth', 'graduation', 'postgraduation']
   };
 
-  const levelsToShow = user?.highestQualification 
+  const levelsToShow = user?.highestQualification
     ? qualificationLevels[user.highestQualification] || []
     : [];
 
@@ -78,7 +78,7 @@ export default function Profile() {
           <p className="text-neutral-600">Manage and view your profile information</p>
         </div>
         <button
-          onClick={() => navigate('/edit-profile')}
+          onClick={() => navigate('/profile/edit')}
           className="btn btn-primary btn-lg w-full md:w-auto"
         >
           Edit Profile
@@ -134,11 +134,11 @@ export default function Profile() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <svg className="w-5 h-5 text-neutral-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M4 4a2 2 0 012-2h6a1 1 0 00-1-1H6a3 3 0 00-3 3v10a3 3 0 003 3h6a3 3 0 003-3V9a1 1 0 10-2 0v5a1 1 0 11-2 0V4z"/>
+                      <path d="M4 4a2 2 0 012-2h6a1 1 0 00-1-1H6a3 3 0 00-3 3v10a3 3 0 003 3h6a3 3 0 003-3V9a1 1 0 10-2 0v5a1 1 0 11-2 0V4z" />
                     </svg>
                     <p className="font-medium text-neutral-900">Resume {index + 1}</p>
                   </div>
-                  <p className="text-sm text-neutral-600">{resume.fileName}</p>
+                  <p className="text-sm text-neutral-600">{resume.fileName || 'Resume PDF'}</p>
                   <p className="text-xs text-neutral-500 mt-1">
                     Uploaded {new Date(resume.uploadedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                   </p>
@@ -168,7 +168,7 @@ export default function Profile() {
       {user?.highestQualification && (
         <div className="card">
           <h2 className="text-xl font-semibold mb-6 pb-4 border-b border-neutral-200">Education Details</h2>
-          
+
           <div className="mb-6 pb-6 border-b border-neutral-200">
             <label className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Highest Qualification</label>
             <p className="text-neutral-900 mt-2 font-medium capitalize text-lg">{user.highestQualification}</p>

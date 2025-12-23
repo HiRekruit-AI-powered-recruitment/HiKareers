@@ -18,7 +18,7 @@ export default function ProfileCompletionBanner() {
             Your profile is incomplete. Please complete your profile to apply for jobs and get better recommendations.
           </p>
           <button
-            onClick={() => navigate('/edit-profile')}
+            onClick={() => navigate('/profile/edit')}
             className="inline-flex items-center gap-2 px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition"
           >
             Complete Profile
