@@ -4,7 +4,6 @@ import {
     login,
     logout,
     refreshAccessToken,
-    getCurrentUser
 } from "../controllers/auth.controller.js";
 import verifyUser from "../middlewares/Auth.middleware.js";
 

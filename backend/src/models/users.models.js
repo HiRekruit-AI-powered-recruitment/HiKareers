@@ -5,6 +5,21 @@ import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 
+const resume = mongoose.Schema({
+    url: String,
+    publicId: String,
+    // fileName: String,
+    uploadedAt: {
+        type: Date,
+        default: Date.now
+    }
+}, { _id: false });
+
+const resumeListSchema = mongoose.Schema({
+    1: { type: resume, default: null },
+    2: { type: resume, default: null },
+    3: { type: resume, default: null },
+}, { _id: false });
 
 const userSchema = mongoose.Schema({
     userName : {
@@ -33,6 +48,81 @@ const userSchema = mongoose.Schema({
         type : String,
         required : true,
     },
+    mobile : {
+        type : String,
+        trim: true,
+        default: null,
+    },
+    emailVerified : {
+        type : Boolean,
+        default: false,
+    },
+    mobileVerified : {
+        type : Boolean,
+        default: false,
+    },
+    profilePhoto: {
+        imageUrl: {
+            type: String,
+            default: null,
+        },
+        publicId: {
+            type: String,
+            default: null,
+        }
+    },
+    profileCompleted: {
+        type: Boolean,
+        default: false,
+    },
+    resumes: {
+        type: resumeListSchema,
+        default: () => ({})
+    },
+    highestQualification : {
+        type : String,
+        enum: ['10th', '12th', 'graduation', 'postgraduation', null],
+        default: null,
+    },
+    qualifications : {
+        tenth: {
+            completed: { type: Boolean, default: false },
+            percentage: { type: Number, min: 0, max: 100 },
+            cgpa: { type: Number, min: 0, max: 10 },
+            board: String,
+            schoolName: String,
+            yearOfPassing: Number,
+        },
+        twelfth: {
+            completed: { type: Boolean, default: false },
+            percentage: { type: Number, min: 0, max: 100 },
+            cgpa: { type: Number, min: 0, max: 10 },
+            board: String,
+            schoolName: String,
+            stream: String,
+            yearOfPassing: Number,
+        },
+        graduation: {
+            completed: { type: Boolean, default: false },
+            percentage: { type: Number, min: 0, max: 100 },
+            cgpa: { type: Number, min: 0, max: 10 },
+            degree: String,
+            university: String,
+            collegeName: String,
+            specialization: String,
+            yearOfPassing: Number,
+        },
+        postgraduation: {
+            completed: { type: Boolean, default: false },
+            percentage: { type: Number, min: 0, max: 100 },
+            cgpa: { type: Number, min: 0, max: 10 },
+            degree: String,
+            university: String,
+            collegeName: String,
+            specialization: String,
+            yearOfPassing: Number,
+        }
+    },
     refreshToken: String
 }, {timestamps: true,})
 
@@ -42,12 +132,11 @@ userSchema.methods.isPasswordCorrect = async function (password){
     return await bcrypt.compare(password, this.password);
 }
 
-userSchema.pre('save', async function(next){
+userSchema.pre('save', async function(){
     if(!this.isModified('password'))
-        return next()
+        return ;
     
     this.password = await bcrypt.hash(this.password, 10)
-    next()
 });
 
 userSchema.methods.generateRefreshToken = async function(){

@@ -35,7 +35,7 @@ This module will be integrated later with the main project.
 - `userId`: ObjectId (Reference to user)
 - `resumeUrl`: String (Cloudinary URL)
 - `currentStatus`: String  
-  Values: `["APPLIED", "UNDER_REVIEW", "SHORTLISTED", "REJECTED", "WITHDRAWN"]`  
+  Values: `["APPLIED", "UNDER_REVIEW", "SHORTLISTED", "REJECTED", "WITHDRAWN", "OFFERED", "ACCEPTED"    ]`  
   Default: `APPLIED`
 - `statusLogs`: Array of Objects *(to be implemented later)*  
   Each object contains:
@@ -121,9 +121,7 @@ We have three options:
 **Chosen Approach:** Option 3, for simplicity for now.
 
 ## Environment Variables (`.env`)
-
-env
-NODE_ENV=development
+    NODE_ENV=development
 PORT=5000
 CLIENT_URL=http://localhost:5173
 
@@ -180,16 +178,20 @@ API ENDPOINTS:
             - 404 Not Found:  Resource does not exist.
 
 
-Other Response Codes to handle:
-    - 500 Internal Server Error: For unexpected server errors.
-    - 401 Unauthorized: If user is not authenticated (to be handled in main project). (To be handled in main project)
-    - 403 Forbidden: If user tries to access/update applications they don't have permission for. (Handled by verifyHR middleware for HR routes)
+**Other Response Codes to handle:**
+- 500 Internal Server Error: For unexpected server errors.
+- 401 Unauthorized: If user is not authenticated (to be handled in main project). (To be handled in main project)
+- 403 Forbidden: If user tries to access/update applications they don't have permission for. (Handled by verifyHR middleware for HR routes)
 
-Extra Instructions: 
-    - Store resume with name {userId}.pdf to easily identify resumes.
-    - Cloudinary folder structure: /resumes/{job_id}/{userId}.pdf (This helps in easy debugging and overwrite on re-upload, avoid file_name conflicts, and only one resume per user per job also only one possible orphan file per user per job)
-    - On unique index violation (Mongo error code 11000), API returns 409 Conflict.
+**Extra Instructions:** 
+- Store resume with name {userId}.pdf to easily identify resumes.
+- Cloudinary folder structure: /resumes/{job_id}/{userId}.pdf (This helps in easy debugging and overwrite on re-upload, avoid file_name conflicts, and only one resume per user per job also only one possible orphan file per user per job)
+- On unique index violation (Mongo error code 11000), API returns 409 Conflict.
 
 ------------------------------------------------------------------------------------------------------------------------------
 
 ## Frontend Structure
+
+- Login page/Signup page
+- Apply Page (where user can apply for a job)
+- Application History Page (where user can see all his applications, with status and sorted by lastUpdatedAt)

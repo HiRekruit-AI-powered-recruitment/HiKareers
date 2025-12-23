@@ -6,6 +6,7 @@ import ApiError from "../utils/ApiError.utils.js";
 export const connectDB = async () => {
     console.log("Connecting to database...");
     const dbUrl = process.env.DB_URL;
+    console.log("Database URL:", dbUrl);
     if (!dbUrl) {console.error("Database URL is not defined in environment variables");
         throw new ApiError(500,"Database URL is not defined in environment variables",{}, "connectDB : index.db.js");}
 

@@ -2,9 +2,46 @@ import asyncHandler from "../utils/asyncHnadler.utils.js";
 import ApiError from "../utils/ApiError.utils.js";
 import ApiResponse from "../utils/ApiResponse.utils.js";
 import { User } from "../models/users.models.js";
+import UploadToCloudinary from "../utils/UploadToCloudinary.utils.js";
+import cloudinary from '../config/cloudinary.js';
+
+export const uploadUserResumes = asyncHandler(async (req, res) => {
+  const resumeFile = req.file || {};
+  console.log(req.body)
+
+  const user = await User.findById(req.user._id);
+  if (!user) throw new ApiError(404, "User not found");
+
+  const result = await UploadToCloudinary(
+      resumeFile.buffer,
+      `user_resume/${user._id}/${req.body.sequence}`,
+      req.body.sequence
+    );
+
+    if (user.resumes?.[req.body.sequence]?.publicId) {
+      await cloudinary.uploader.destroy(user.resumes[req.body.sequence].publicId, {
+        resource_type: 'raw'
+      });
+    }
+    user.resumes[req.body.sequence] = {
+      url: result.secure_url,
+      publicId: result.public_id,
+      // fileName: resumeFile.originalname,
+      uploadedAt: new Date()
+    };
+
+
+  await user.save();
+
+  return res.status(200).json(
+    new ApiResponse(200, "Resumes uploaded successfully", user.resumes)
+  );
+});
+
 
 
 export const getCurrentUser = asyncHandler(async (req, res) => {
+    console.log("Current user:", req.user);
     return res
         .status(200)
         .json(new ApiResponse(200, "User fetched successfully", req.user));
@@ -12,14 +49,18 @@ export const getCurrentUser = asyncHandler(async (req, res) => {
 
 
 export const updateUserProfile = asyncHandler(async (req, res) => {
-    const { fullName, email } = req.body;
+    const { fullName, email, mobile, highestQualification, qualifications } = req.body;
 
-    if (!fullName && !email) {
+    if (!fullName && !email && !mobile && !highestQualification && !qualifications) {
         throw new ApiError(400, "At least one field is required to update");
     }
 
     const updateData = {};
     if (fullName) updateData.fullName = fullName;
+    if (mobile) updateData.mobile = mobile;
+    if (highestQualification) updateData.highestQualification = highestQualification;
+    if (qualifications) updateData.qualifications = qualifications;
+    
     if (email) {
         const existingUser = await User.findOne({ 
             email, 

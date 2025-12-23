@@ -18,7 +18,7 @@ const router = Router();
 router.use(verifyUser);
 
 // User routes
-router.post("/", uploadResume, handleMulterError, createApplication);
+router.post("/", createApplication);
 router.get("/me", getMyApplications);
 router.get("/:applicationId", getApplicationById);
 router.patch("/:applicationId/resume", uploadResume, handleMulterError, updateApplication);

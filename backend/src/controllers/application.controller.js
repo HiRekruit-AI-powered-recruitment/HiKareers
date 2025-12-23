@@ -3,53 +3,102 @@ import ApiError from "../utils/ApiError.utils.js";
 import ApiResponse from "../utils/ApiResponse.utils.js";
 import { Application } from "../models/applications.moodel.js";
 import { Job } from "../models/jobs.models.js";
+import { User } from "../models/users.models.js";
 import cloudinary from "../config/cloudinary.js";
 import streamifier from "streamifier";
 import UploadToCloudinary from "../utils/UploadToCloudinary.utils.js";
+import axios from "axios";
 
 export const createApplication = asyncHandler(async (req, res) => {
-    const { jobId } = req.body;
+    const { 
+        jobId, 
+        fullName, 
+        email, 
+        mobileNumber, 
+        educationDetails, 
+        backlogs,
+        resumeUrl 
+    } = req.body;
     const userId = req.user._id;
 
+    // Validation
     if (!jobId) {
         throw new ApiError(400, "Job ID is required");
     }
 
-    if (!req.file) {
-        throw new ApiError(400, "Resume file is required");
+    if (!fullName || !email || !mobileNumber) {
+        throw new ApiError(400, "Full name, email, and mobile number are required");
     }
 
+    if (!backlogs || !['0', '1', '2+'].includes(backlogs)) {
+        throw new ApiError(400, "Valid backlogs value is required (0, 1, or 2+)");
+    }
+
+    if (!resumeUrl) {
+        throw new ApiError(400, "Resume URL is required");
+    }
+
+    // Check if job exists
     const job = await Job.findById(jobId);
     if (!job) {
         throw new ApiError(404, "Job not found");
     }
 
+    // Check job deadline
     const currentDate = new Date();
     if (new Date(job.endDate) < currentDate) {
         throw new ApiError(400, "Job application deadline has passed");
     }
 
+    // Check if user already applied
+    const existingApplication = await Application.findOne({ jobId, userId });
+    if (existingApplication) {
+        throw new ApiError(400, "You have already applied for this job");
+    }
 
-    const folder = `resumes/${jobId}`;
-    const publicId = `${userId}`;
+    try {
+        // Fetch resume from provided URL
+        const resumeResponse = await axios.get(resumeUrl, {
+            responseType: 'arraybuffer',
+            timeout: 10000
+        });
 
-    const result = await UploadToCloudinary(
-        req.file.buffer,
-        jobId,
-        req.user._id
-    );
+        const resumeBuffer = Buffer.from(resumeResponse.data);
 
-    const application = await Application.create({
-        jobId,
-        userId,
-        resumeUrl: result.secure_url,
-        resumePublicId: result.public_id,   // Note result.public_id also includes folder path so do not directly use {publicId} here
-        currentStatus: 'APPLIED'
-    });
+        // Upload resume to Cloudinary
+        const uploadResult = await UploadToCloudinary(
+            resumeBuffer,
+            `resumes/${jobId}`,
+            `${userId}`
+        );
 
-    return res
-        .status(201)
-        .json(new ApiResponse(201, "Application submitted successfully", application));
+        // Create application
+        const application = await Application.create({
+            jobId,
+            userId,
+            fullName,
+            email,
+            mobileNumber,
+            educationDetails: educationDetails || {},
+            backlogs,
+            resumeUrl: uploadResult.secure_url,
+            resumePublicId: uploadResult.public_id,
+            currentStatus: 'APPLIED'
+        });
+
+        // Populate user details before sending response
+        await application.populate('jobId', 'title company location endDate');
+
+        return res
+            .status(201)
+            .json(new ApiResponse(201, "Application submitted successfully", application));
+
+    } catch (error) {
+        if (error.response) {
+            throw new ApiError(400, "Failed to fetch resume from provided URL");
+        }
+        throw error;
+    }
 });
 
 
@@ -90,8 +139,8 @@ export const updateApplication = asyncHandler(async (req, res) => {
 
     const result = await UploadToCloudinary(
         req.file.buffer,
-        application.jobId,
-        req.user._id
+        `resumes/${application.jobId}`,
+        `${req.user._id}`
     );
     application.resumeUrl = result.secure_url;
     application.resumePublicId = result.public_id;

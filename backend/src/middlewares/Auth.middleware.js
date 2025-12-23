@@ -1,7 +1,7 @@
-import asyncHandler from "../utils/asyncHandler.utils.js"
+import asyncHandler from "../utils/asyncHnadler.utils.js"
 import jwt from "jsonwebtoken"
 import ApiError from "../utils/ApiError.utils.js"
-import { User } from "../models/user.models.js"
+import { User } from "../models/users.models.js"
 
 
 const verifyUser = asyncHandler(async (req, res, next) => {
@@ -23,7 +23,7 @@ const verifyUser = asyncHandler(async (req, res, next) => {
         throw new ApiError(401, "User not found")
 
     req.user = user
-
+    console.log("Verified user:", user);
     next()
 })
 

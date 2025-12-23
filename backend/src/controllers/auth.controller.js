@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 
 
 export const register = asyncHandler(async (req, res) => {
+    console.log("Registering user with data:", req.body);
     const { userName, email, fullName, password } = req.body;
     const options = {
         httpOnly: true,
@@ -24,18 +25,14 @@ export const register = asyncHandler(async (req, res) => {
         throw new ApiError(409, "User with email or username already exists");
     }
 
+    const newUser = new User({ userName, email, fullName, password });
     const newRefreshToken = await newUser.generateRefreshToken();
     const accessToken = await newUser.generateAccessToken();
     if(!newRefreshToken || !accessToken)
         throw new ApiError(500, "Internal Server Error", "Failed to generate tokens");
+    newUser.refreshToken = newRefreshToken;
 
-    const user = await User.create({
-        userName,
-        email,
-        fullName,
-        password,
-        refreshToken: newRefreshToken
-    });
+    const user = await User.create(newUser);
 
     const createdUser = await User.findById(user._id).select("-password -refreshToken");
 

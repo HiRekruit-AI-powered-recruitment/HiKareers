@@ -24,8 +24,8 @@ import userRouter from './routes/user.routes.js';
 import applicationRouter from './routes/application.routes.js';
 
 app.use("/v1/auth", authRouter)
-app.use("/v1/users", userRouter)
-app.use("/v1/applications", applicationRouter)
+app.use("/v1/user", userRouter)
+app.use("/v1/application", applicationRouter)
 
 
 
