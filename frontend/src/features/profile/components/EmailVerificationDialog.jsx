@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { userAPI } from '../api';
 
-export default function EmailVerificationDialog({ open, onClose, email }) {
+export default function EmailVerificationDialog({ open, onClose, email, onVerified }) {
   const [sent, setSent] = useState(false);
   const [timer, setTimer] = useState(0); // seconds remaining
   const [otp, setOtp] = useState('');
@@ -56,11 +56,14 @@ export default function EmailVerificationDialog({ open, onClose, email }) {
     setStatus({ text: '', type: '' });
     try {
       const res = await userAPI.sendEmailOtp(email);
+      if (!res?.success) {
+        throw new Error(res?.message || 'Failed to send OTP');
+      }
       setStatus({ text: res.message || `OTP sent to ${email}`, type: 'info' });
       setSent(true);
       startTimer(300);
     } catch (err) {
-      setStatus({ text: err?.message || 'Failed to send OTP (stub)', type: 'error' });
+      setStatus({ text: err?.message || 'Failed to send OTP', type: 'error' });
     } finally {
       setSending(false);
     }
@@ -74,12 +77,17 @@ export default function EmailVerificationDialog({ open, onClose, email }) {
     setVerifying(true);
     setStatus({ text: '', type: '' });
     try {
-      const res = await userAPI.verifyEmailOtp({ email, otp });
-      setStatus({ text: res.message || 'OTP verified (stub)', type: 'success' });
-      // show success briefly then close
+      const res = await userAPI.verifyEmailOtp({ otp });
+      if (!res?.success) {
+        throw new Error(res?.message || 'Invalid or expired OTP');
+      }
+      setStatus({ text: res.message || 'OTP verified successfully', type: 'success' });
+      if (onVerified) {
+        await onVerified();
+      }
       setTimeout(() => onClose(), 700);
     } catch (err) {
-      setStatus({ text: err?.message || 'Verification failed (stub)', type: 'error' });
+      setStatus({ text: err?.message || 'Verification failed', type: 'error' });
     } finally {
       setVerifying(false);
     }

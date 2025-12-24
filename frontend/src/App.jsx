@@ -10,6 +10,7 @@ import Profile from './features/profile/Profile';
 import EditProfile from './features/profile/EditProfile';
 import Home from './features/home/Home';
 import Apply from './features/applications/Apply';
+import Applications from './features/applications/Applications';
 
 function App() {
   const location = useLocation();
@@ -57,10 +58,10 @@ function App() {
           />
 
           <Route
-            path="/apply/:jobId"
+            path="/applications"
             element={
               <ProtectedRoute>
-                <Apply />
+                <Applications />
               </ProtectedRoute>
             }
           />

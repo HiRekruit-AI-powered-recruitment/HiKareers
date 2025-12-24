@@ -216,6 +216,7 @@ export default function EditProfile() {
         const userData = response.data;
         setUser(userData);
         setOriginalUser(userData);
+        sessionStorage.setItem('user', JSON.stringify(userData));
         setProfileForm({ mobile: userData.mobile || '', fullName: userData.fullName || '' });
         setHighestQualification(userData.highestQualification || '');
         setQualifications(normalizeQualificationsForState(userData.qualifications));
@@ -242,6 +243,12 @@ export default function EditProfile() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleEmailVerified() {
+    setError('');
+    setSuccess('Email verified successfully!');
+    await loadUserProfile();
   }
 
   function handleMobileChange(e) {
@@ -385,7 +392,12 @@ export default function EditProfile() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-12">
-      <EmailVerificationDialog open={showEmailDialog} onClose={() => setShowEmailDialog(false)} email={user?.email} />
+      <EmailVerificationDialog
+        open={showEmailDialog}
+        onClose={() => setShowEmailDialog(false)}
+        email={user?.email}
+        onVerified={handleEmailVerified}
+      />
       <MobileVerificationDialog open={showMobileDialog} onClose={() => setShowMobileDialog(false)} mobile={profileForm.mobile || user?.mobile} />
       {/* Header Card */}
       <div className="card">

@@ -4,6 +4,7 @@ import { sendMail } from "../utils/sendEmail.utils.js";
 import otpGenerator from "otp-generator";
 import mongoose from "mongoose";
 import { EmailVerification } from "../models/emialVerification.js";
+import { User } from "../models/users.models.js";
 
 export const sendEmailVerificationOtp = asyncHandler(async (req, res) => {
   const session = await mongoose.startSession();
@@ -40,4 +41,25 @@ export const sendEmailVerificationOtp = asyncHandler(async (req, res) => {
     success: true,
     message: `OTP sent to ${email}`
   });
+});
+
+export const verifyEmailOtp = asyncHandler(async (req, res) => {
+    const {otp} = req.body;
+    if(!otp)
+      throw new ApiError(400, "OTP not found");
+
+    const record = await EmailVerification.findOne({_id: req.user._id});
+    if(!record)
+      throw new ApiError(404, "No OTP record found, please request a new OTP");
+
+    if(record.otp !== otp || record.emailVerificationOtpExpiry < Date.now())
+      throw new ApiError(400, "Invalid or expired OTP");
+
+    await User.findByIdAndUpdate(req.user._id, { emailVerified: true });
+    await EmailVerification.deleteOne({_id: req.user._id});
+
+    res.status(200).json({
+      success: true,
+      message: "Email verified successfully"
+    });
 });

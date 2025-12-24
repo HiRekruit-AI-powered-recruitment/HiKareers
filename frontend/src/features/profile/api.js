@@ -11,12 +11,10 @@ export const userAPI = {
   ),
   getUserById: (id) => handleRequest(client.get(`/user/${id}`)),
 
-  // Verification stubs (no backend call yet)
+  // Verification endpoints
   sendEmailOtp: (email)=>handleRequest(client.post('/verification/send-email-verification-otp', { email })),
   
-  verifyEmailOtp: ({ email, otp }) => {
-    return new Promise((resolve) => setTimeout(() => resolve({ success: true, message: 'OTP verified (stub)' }), 300));
-  },
+  verifyEmailOtp: ({ otp }) => handleRequest(client.post('/verification/verify-email-otp', { otp })),
   sendMobileOtp: (mobile) => {
     return new Promise((resolve) => setTimeout(() => resolve({ success: true, message: `OTP sent to ${mobile}` }), 400));
   },

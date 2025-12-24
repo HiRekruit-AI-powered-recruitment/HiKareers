@@ -15,11 +15,11 @@ const resume = mongoose.Schema({
     }
 }, { _id: false });
 
-const resumeListSchema = mongoose.Schema({
-    1: { type: resume, default: null },
-    2: { type: resume, default: null },
-    3: { type: resume, default: null },
-}, { _id: false });
+// const resumeListSchema = mongoose.Schema({
+//     1: { type: resume, default: null },
+//     2: { type: resume, default: null },
+//     3: { type: resume, default: null },
+// }, { _id: false });
 
 const userSchema = mongoose.Schema({
     userName : {
@@ -76,61 +76,58 @@ const userSchema = mongoose.Schema({
         default: false,
     },
     resumes: {
-        type: resumeListSchema,
-        default: () => ({})
+        1: { type: resume, default: null },
+        2: { type: resume, default: null },
+        3: { type: resume, default: null },
     },
     highestQualification : {
         type : String,
-        enum: ['10th', '12th', 'graduation', 'postgraduation', null],
+        enum: ['tenth', 'twelfth', 'graduation', 'postgraduation', null],
         default: null,
     },
     qualifications : {
         tenth: {
             completed: { type: Boolean, default: false },
-            startYear: Number,
-            endYear: Number,
+            startYear: {type : Number, default: null},
+            endYear: {type : Number, default: null},
             percentage: { type: Number, min: 0, max: 100 },
             cgpa: { type: Number, min: 0, max: 10 },
-            board: String,
-            schoolName: String,
-            yearOfPassing: Number,
+            board: {type: String, default: null},
+            schoolName: {type: String, default: null},
         },
         twelfth: {
             completed: { type: Boolean, default: false },
-            startYear: Number,
-            endYear: Number,
+            startYear: {type : Number, default: null},
+            endYear: {type : Number, default: null},
             percentage: { type: Number, min: 0, max: 100 },
             cgpa: { type: Number, min: 0, max: 10 },
-            board: String,
-            schoolName: String,
-            stream: String,
-            yearOfPassing: Number,
+            board: {type: String, default: null},
+            schoolName: {type: String, default: null},
+            stream: {type: String, default: null},
         },
         graduation: {
             completed: { type: Boolean, default: false },
-            courseName: String,
-            startYear: Number,
-            endYear: Number,
+            courseName: {type: String, default: null},
+            startYear: {type : Number, default: null},
+            endYear: {type : Number, default: null},
             percentage: { type: Number, min: 0, max: 100 },
             cgpa: { type: Number, min: 0, max: 10 },
-            degree: String,
-            university: String,
-            collegeName: String,
-            specialization: String,
-            yearOfPassing: Number,
+            degree: {type: String, default: null},
+            university: {type: String, default: null},
+            collegeName: {type: String, default: null},
+            specialization: {type: String, default: null},
         },
         postgraduation: {
             completed: { type: Boolean, default: false },
-            courseName: String,
-            startYear: Number,
-            endYear: Number,
+            courseName: {type: String, default: null},
+            startYear: {type : Number, default: null},
+            endYear: {type : Number, default: null},
             percentage: { type: Number, min: 0, max: 100 },
             cgpa: { type: Number, min: 0, max: 10 },
-            degree: String,
-            university: String,
-            collegeName: String,
-            specialization: String,
-            yearOfPassing: Number,
+            degree: {type: String, default: null},
+            university: {type: String, default: null},
+            collegeName: {type: String, default: null},
+            specialization: {type: String, default: null},
         }
     },
     refreshToken: String
@@ -149,32 +146,92 @@ userSchema.pre('save', async function(){
     this.password = await bcrypt.hash(this.password, 10)
 });
 
-// Compute whether profile is completed based on required fields and verifications
-userSchema.methods.computeProfileCompleted = function() {
-    const hasResume = (() => {
-        const r = this.resumes || {};
-        if (Array.isArray(r)) return r.length > 0;
-        return [1,2,3].some(i => !!r[i] || !!r[String(i)]);
-    })();
 
-    return Boolean(
-        this.fullName &&
-        this.mobile &&
-        this.highestQualification &&
-        hasResume &&
-        this.emailVerified &&
-        this.mobileVerified
-    );
-};
 
-// Ensure profileCompleted is kept in sync whenever user is saved
-userSchema.pre('save', function() {
-    try {
-        this.profileCompleted = this.computeProfileCompleted();
-    } catch (e) {
-        // ignore compute errors and proceed
-    }
+function isQualificationCompleted(level, data) {
+  if (!data) return false;
+
+  const rules = {
+    tenth: ['startYear', 'endYear', 'percentage', 'cgpa', 'board', 'schoolName'],
+    twelfth: ['startYear', 'endYear', 'percentage', 'cgpa', 'board', 'schoolName'],
+    graduation: [
+      'courseName','startYear','endYear','percentage','cgpa','degree','university','collegeName'],
+    postgraduation: ['courseName','startYear','endYear','percentage','cgpa','degree','university','collegeName'],
+  };
+
+  return rules[level].every(field => data[field] != null);
+}
+// Helper function to check atleast one resume is uploaded
+function hasAnyResume(resumes) {
+  if (!resumes) return false;
+
+  return Object.values(resumes).some(r => r !== null);
+}
+//helper function for qualification check based on highest qualification level
+function areRequiredQualificationsCompleted(qualifications, highestQualification) {
+  if (!qualifications || !highestQualification) return false;
+
+  const order = ['tenth', 'twelfth', 'graduation', 'postgraduation'];
+
+  const requiredLevels = order.slice(
+    0,
+    order.indexOf(highestQualification) + 1
+  );
+
+  return requiredLevels.every(
+    level => qualifications[level]?.completed === true
+  );
+}
+//helper function to check profileCompleted
+function isProfileCompleted(user) {
+  if (!user) return false;
+
+  const basicChecks =
+    user.emailVerified === true &&
+    user.mobileVerified === true &&
+    user.highestQualification != null &&
+    hasAnyResume(user.resumes);
+
+  if (!basicChecks) return false;
+
+  return areRequiredQualificationsCompleted(
+    user.qualifications,
+    user.highestQualification
+  );
+}
+
+userSchema.pre('save', function (next) {
+    const watchedFields = [
+  'emailVerified',
+  'mobileVerified',
+  'highestQualification',
+  'resumes',
+  'qualifications'
+];
+    if (!watchedFields.some(f => this.isModified(f))) {
+    return next();
+  }
+  this.profileCompleted = isProfileCompleted(this);
+  next();
 });
+
+
+
+userSchema.pre('save', function (next) {
+    if (!this.isModified('qualifications')) return next();
+  const q = this.qualifications;
+
+  if (!q) return next();
+
+  q.tenth.completed = isQualificationCompleted('tenth', q.tenth);
+  q.twelfth.completed = isQualificationCompleted('twelfth', q.twelfth);
+  q.graduation.completed = isQualificationCompleted('graduation', q.graduation);
+  q.postgraduation.completed = isQualificationCompleted('postgraduation', q.postgraduation);
+
+  next();
+});
+
+
 
 userSchema.methods.generateRefreshToken = async function(){
     const payload = {
