@@ -22,7 +22,9 @@ app.use(cookieParser())
 import authRouter from './routes/auth.routes.js';
 import userRouter from './routes/user.routes.js';
 import applicationRouter from './routes/application.routes.js';
+import verificationRouter from './routes/verification.routes.js';
 
+app.use("/v1/verification", verificationRouter);
 app.use("/v1/auth", authRouter)
 app.use("/v1/user", userRouter)
 app.use("/v1/application", applicationRouter)

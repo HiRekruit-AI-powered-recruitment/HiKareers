@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { userAPI } from './api';
+import EmailVerificationDialog from './components/EmailVerificationDialog.jsx';
+import MobileVerificationDialog from './components/MobileVerificationDialog.jsx';
 
 const EMPTY_QUALIFICATIONS = {
   tenth: { completed: false, startYear: '', endYear: '', percentage: '', cgpa: '', board: '', schoolName: '', yearOfPassing: '' },
@@ -200,6 +202,9 @@ export default function EditProfile() {
   const [originalUser, setOriginalUser] = useState(null);
   const [otherChanged, setOtherChanged] = useState(false);
 
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [showMobileDialog, setShowMobileDialog] = useState(false);
+
   useEffect(() => {
     loadUserProfile();
   }, []);
@@ -380,6 +385,8 @@ export default function EditProfile() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-12">
+      <EmailVerificationDialog open={showEmailDialog} onClose={() => setShowEmailDialog(false)} email={user?.email} />
+      <MobileVerificationDialog open={showMobileDialog} onClose={() => setShowMobileDialog(false)} mobile={profileForm.mobile || user?.mobile} />
       {/* Header Card */}
       <div className="card">
         <h1 className="text-3xl font-semibold mb-2">Edit Profile</h1>
@@ -432,7 +439,7 @@ export default function EditProfile() {
                   <button
                     type="button"
                     className="btn btn-ghost btn-sm"
-                    onClick={() => alert('Email verification will be implemented')}
+                    onClick={() => setShowEmailDialog(true)}
                   >
                     Verify
                   </button>
@@ -477,7 +484,7 @@ export default function EditProfile() {
                   type="button"
                   className="btn btn-ghost btn-sm"
                   disabled={!profileForm.mobile || profileForm.mobile.length !== 10}
-                  onClick={() => alert('Mobile verification will be implemented')}
+                  onClick={() => setShowMobileDialog(true)}
                 >
                   Verify
                 </button>
