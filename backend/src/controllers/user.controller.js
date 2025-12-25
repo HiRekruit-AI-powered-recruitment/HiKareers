@@ -66,74 +66,44 @@ export const getCurrentUser = asyncHandler(async (req, res) => {
 
 
 export const updateUserProfile = asyncHandler(async (req, res) => {
-    const { fullName, email, mobile, highestQualification, qualifications } = req.body;
+    const { fullName, mobile, highestQualification, qualifications } = req.body;
+    const user = await User.findOne(req.user._id);
 
-    if (!fullName && !email && !mobile && !highestQualification && !qualifications) {
+    if (!fullName && !mobile && !highestQualification && !qualifications) 
         throw new ApiError(400, "At least one field is required to update");
-    }
-
-    const user = await User.findById(req.user._id);
-    if (!user) throw new ApiError(404, 'User not found');
+    if(!user)
+      throw new ApiError(404, "User not found")
 
     // Prevent changing mobile once it's verified
-    if (mobile && user.mobileVerified && mobile !== user.mobile) {
-      throw new ApiError(400, 'Cannot change mobile once verified');
-    }
+    if (mobile && user.mobileVerified && mobile !== user.mobile) 
+        throw new ApiError(400, 'Cannot change mobile once verified');
 
     const updateData = {};
-    if (fullName) updateData.fullName = fullName;
-    if (mobile) updateData.mobile = mobile;
-    if (highestQualification) updateData.highestQualification = highestQualification;
-    if (qualifications) updateData.qualifications = qualifications;
+    if (fullName) user.fullName = fullName;
+    if (mobile) user.mobile = mobile;
+    if (highestQualification) user.highestQualification = highestQualification;
+    if (qualifications) user.qualifications = qualifications;
     
-    if (email) {
-        const existingUser = await User.findOne({ 
-            email, 
-            _id: { $ne: req.user._id } 
-        });
-        if (existingUser) {
-            throw new ApiError(409, "Email already exists");
-        }
-        updateData.email = email;
-    }
-
-    const updatedUser = await User.findByIdAndUpdate(
-        req.user._id,
-        { $set: updateData },
-        { new: true }
-    ).select("-password -refreshToken");
-
-    if (!updatedUser) {
-        throw new ApiError(404, "User not found");
-    }
-
-    // Recompute profile completion using model helper
-    const profileCompleted = updatedUser.computeProfileCompleted ? updatedUser.computeProfileCompleted() : false;
-    if (updatedUser.profileCompleted !== profileCompleted) {
-      updatedUser.profileCompleted = profileCompleted;
-      await updatedUser.save();
-    }
+    await user.save();
 
     return res
         .status(200)
-        .json(new ApiResponse(200, "Profile updated successfully", updatedUser));
+        .json(new ApiResponse(200, "Profile updated successfully", user));
 });
 
 
 export const changePassword = asyncHandler(async (req, res) => {
     const { oldPassword, newPassword } = req.body;
 
-    if (!oldPassword || !newPassword) {
+    if (!oldPassword || !newPassword) 
         throw new ApiError(400, "Old password and new password are required");
-    }
 
     const user = await User.findById(req.user._id);
     
     const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
     
-    if (!isPasswordCorrect) {
+    if (!isPasswordCorrect) 
         throw new ApiError(401, "Invalid old password");
-    }
 
     user.password = newPassword;
     await user.save({ validateBeforeSave: false });
