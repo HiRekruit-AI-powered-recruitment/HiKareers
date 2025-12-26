@@ -1,0 +1,1 @@
+1. Compare job model and then update the 'application.controller.js' to match with that of main module model.

@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "nodemailer": "^7.0.12",
+    "otp-generator": "^4.0.1"
+  },
+  "devDependencies": {
+    "prettier": "^3.7.4"
+  }
+}
