@@ -6,7 +6,7 @@ export default function Signup() {
   const navigate = useNavigate();
   const location = useLocation();
   const { signup, isAuthenticated } = useAuth();
-  
+
   const [form, setForm] = useState({
     userName: '',
     fullName: '',
@@ -14,7 +14,7 @@ export default function Signup() {
     password: '',
     confirmPassword: '',
   });
-  
+
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -31,26 +31,35 @@ export default function Signup() {
   function validateForm() {
     const errors = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
 
-    if (!form.fullName.trim()) errors.fullName = 'Full name is required';
-    if (!form.userName.trim()) errors.userName = 'Username is required';
-    
-    if (!form.email) {
+    // Allows letters, numbers, and special characters
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+
+    if (!form.fullName.trim()) {
+      errors.fullName = 'Full name is required';
+    }
+
+    if (!form.userName.trim()) {
+      errors.userName = 'Username is required';
+    }
+
+    const email = form.email.trim();
+    if (!email) {
       errors.email = 'Email is required';
-    } else if (!emailRegex.test(form.email)) {
+    } else if (!emailRegex.test(email)) {
       errors.email = 'Please enter a valid email address';
     }
-    
+
     if (!form.password) {
       errors.password = 'Password is required';
-    } else if (form.password.length < 8) {
-      errors.password = 'Password must be at least 8 characters long';
     } else if (!passwordRegex.test(form.password)) {
-      errors.password = 'Password must contain at least one letter and one number';
+      errors.password =
+        'Password must be at least 8 characters and include a letter and a number';
     }
-    
-    if (form.password !== form.confirmPassword) {
+
+    if (!form.confirmPassword) {
+      errors.confirmPassword = 'Confirm password is required';
+    } else if (form.password !== form.confirmPassword) {
       errors.confirmPassword = 'Passwords do not match';
     }
 
@@ -60,10 +69,10 @@ export default function Signup() {
 
   function handleChange(e) {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
     // Clear error for this field when user types
     if (formErrors[name]) {
-      setFormErrors(prev => ({ ...prev, [name]: '' }));
+      setFormErrors((prev) => ({ ...prev, [name]: '' }));
     }
     setError('');
   }
@@ -87,7 +96,7 @@ export default function Signup() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -106,17 +115,19 @@ export default function Signup() {
       }
 
       const result = await signup(formData);
-      
+
       if (result.success) {
         // Redirect to login with success state
-        navigate('/login', { 
-          state: { 
+        navigate('/login', {
+          state: {
             success: true,
-            from: location.state?.from 
-          } 
+            from: location.state?.from,
+          },
         });
       } else {
-        setError(result.message || 'Failed to create account. Please try again.');
+        setError(
+          result.message || 'Failed to create account. Please try again.'
+        );
       }
     } catch (error) {
       console.error('Signup error:', error);
@@ -131,8 +142,10 @@ export default function Signup() {
       <div className="card max-w-md w-full bg-white shadow-md rounded-lg p-8">
         {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Create your account</h1>
-          <p className="text-gray-600">Join HireKruit to get started</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Create your account
+          </h1>
+          <p className="text-gray-600">Join HiKareers to get started</p>
         </div>
 
         {/* Error Alert */}
@@ -145,7 +158,10 @@ export default function Signup() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="fullName"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Full Name
             </label>
             <input
@@ -166,7 +182,10 @@ export default function Signup() {
           </div>
 
           <div>
-            <label htmlFor="userName" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="userName"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Username
             </label>
             <input
@@ -187,7 +206,10 @@ export default function Signup() {
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Email address
             </label>
             <input
@@ -210,7 +232,10 @@ export default function Signup() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Password
               </label>
               <input
@@ -226,11 +251,16 @@ export default function Signup() {
                 disabled={loading}
               />
               {formErrors.password && (
-                <p className="mt-1 text-sm text-red-600">{formErrors.password}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {formErrors.password}
+                </p>
               )}
             </div>
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Confirm Password
               </label>
               <input
@@ -241,38 +271,60 @@ export default function Signup() {
                 onChange={handleChange}
                 placeholder="••••••••"
                 className={`w-full px-4 py-2 border rounded-md ${
-                  formErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                  formErrors.confirmPassword
+                    ? 'border-red-500'
+                    : 'border-gray-300'
                 } focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
                 disabled={loading}
               />
               {formErrors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-600">{formErrors.confirmPassword}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {formErrors.confirmPassword}
+                </p>
               )}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Profile Photo (Optional)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Profile Photo (Optional)
+            </label>
             <div className="w-full">
               <label className="w-full flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors">
                 {photoPreview ? (
                   <div className="text-center">
-                    <img 
-                      src={photoPreview} 
-                      alt="Preview" 
-                      className="w-20 h-20 rounded-full object-cover mb-2 mx-auto border-2 border-gray-200" 
+                    <img
+                      src={photoPreview}
+                      alt="Preview"
+                      className="w-20 h-20 rounded-full object-cover mb-2 mx-auto border-2 border-gray-200"
                     />
-                    <p className="text-sm text-gray-600">Click to change photo</p>
+                    <p className="text-sm text-gray-600">
+                      Click to change photo
+                    </p>
                   </div>
                 ) : (
                   <div className="text-center">
                     <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-2">
-                      <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      <svg
+                        className="w-6 h-6 text-gray-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="1.5"
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
                       </svg>
                     </div>
-                    <p className="text-gray-900 text-sm font-medium">Upload profile photo</p>
-                    <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 2MB</p>
+                    <p className="text-gray-900 text-sm font-medium">
+                      Upload profile photo
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      PNG, JPG up to 2MB
+                    </p>
                   </div>
                 )}
                 <input
@@ -293,21 +345,39 @@ export default function Signup() {
           >
             {loading ? (
               <>
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
                 </svg>
                 Creating account...
               </>
-            ) : 'Create Account'}
+            ) : (
+              'Create Account'
+            )}
           </button>
         </form>
 
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
             Already have an account?{' '}
-            <Link 
-              to="/login" 
+            <Link
+              to="/login"
               state={{ from: location.state?.from }}
               className="font-medium text-blue-600 hover:text-blue-500 hover:underline"
             >

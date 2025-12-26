@@ -17,11 +17,11 @@ export const AuthProvider = ({ children }) => {
       try {
         const token = sessionStorage.getItem('accessToken');
         const userData = sessionStorage.getItem('user');
-        
+
         if (token && userData) {
           // Set the user from session storage initially
           setUser(JSON.parse(userData));
-          
+
           // Then verify the token in the background
           verifyToken();
         } else {
@@ -63,7 +63,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await authAPI.login({ email, password });
-      
+
       if (response.success && response.data) {
         const { accessToken, user } = response.data;
         sessionStorage.setItem('accessToken', accessToken);
@@ -74,9 +74,10 @@ export const AuthProvider = ({ children }) => {
       return { success: false, message: response.message || 'Login failed' };
     } catch (error) {
       console.error('Login error:', error);
-      return { 
-        success: false, 
-        message: error.response?.data?.message || error.message || 'Login failed' 
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || error.message || 'Login failed',
       };
     }
   };
@@ -84,16 +85,17 @@ export const AuthProvider = ({ children }) => {
   const signup = async (userData) => {
     try {
       const response = await authAPI.signup(userData);
-      
+
       if (response.success && response.data) {
         return { success: true };
       }
       return { success: false, message: response.message || 'Signup failed' };
     } catch (error) {
       console.error('Signup error:', error);
-      return { 
-        success: false, 
-        message: error.response?.data?.message || error.message || 'Signup failed' 
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || error.message || 'Signup failed',
       };
     }
   };
@@ -104,9 +106,14 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.warn('Server logout failed:', err);
     } finally {
+      // Clear session storage
       sessionStorage.removeItem('accessToken');
       sessionStorage.removeItem('user');
+
+      // Clear user state
       setUser(null);
+
+      // Navigate to login page directly
       navigate('/login');
     }
   };
