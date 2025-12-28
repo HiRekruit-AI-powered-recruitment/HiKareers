@@ -118,36 +118,61 @@ export default function EditProfile() {
   }
 
   async function saveProfile(e) {
-    e?.preventDefault();
-    setSaving(true);
-    setError("");
-    setSuccess("");
+  e?.preventDefault();
+  setSaving(true);
+  setError("");
+  setSuccess("");
 
-    if (form.mobile && form.mobile.length !== 10) {
-      setError("Mobile must be 10 digits");
+  // Mobile validation
+  if (form.mobile && form.mobile.length !== 10) {
+    setError("Mobile must be 10 digits");
+    setSaving(false);
+    return;
+  }
+
+  // Education validation
+  const LEVELS = ["tenth", "twelfth", "graduation", "postgraduation"];
+  const endIndex = LEVELS.indexOf(highestQualification);
+  const visibleLevels = endIndex >= 0 ? LEVELS.slice(0, endIndex + 1) : [];
+
+  for (const level of visibleLevels) {
+    const fields = Object.keys(qualifications[level]);
+    for (const field of fields) {
+      const value = qualifications[level][field];
+      if (value === null || value === undefined || value === "") {
+        setError(`Please fill all fields for ${level} (${field})`);
+        setSaving(false);
+        return;
+      }
+    }
+  }
+
+  try {
+    const payload = buildPayload({
+      form,
+      highestQualification,
+      qualifications,
+      original: originalUser
+    });
+
+    if (!Object.keys(payload).length) {
+      setSuccess("No changes to apply");
       setSaving(false);
       return;
     }
 
-    try {
-      const payload = buildPayload({ form, highestQualification, qualifications, original: originalUser });
-      if (!Object.keys(payload).length) {
-        setSuccess("No changes to apply");
-        setSaving(false);
-        return;
-      }
-
-      const res = await userAPI.updateProfile(payload);
-      if (res.success) {
-        setSuccess("Profile updated successfully!");
-        await loadProfile();
-      } else setError(res.message || "Update failed");
-    } catch (e) {
-      setError(e.response?.data?.message || "Update failed");
-    } finally {
-      setSaving(false);
-    }
+    const res = await userAPI.updateProfile(payload);
+    if (res.success) {
+      setSuccess("Profile updated successfully!");
+      await loadProfile();
+    } else setError(res.message || "Update failed");
+  } catch (e) {
+    setError(e.response?.data?.message || "Update failed");
+  } finally {
+    setSaving(false);
   }
+}
+
 
   function onResumeChange(i, file) {
     const arr = [...resumeFiles];
@@ -288,9 +313,13 @@ function EducationSection({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {Object.keys(qualifications[level]).map((field) => (
               <div key={field}>
-                <label className="label">{field}</label>
+                <label className="label">
+                  {field}
+                  {<span className="text-red-600 ml-1">*</span>}
+                </label>
                 <input
                   value={qualifications[level][field]}
+                  required={true}
                   onChange={(e) =>
                     onQualificationChange(
                       level,
@@ -310,85 +339,64 @@ function EducationSection({
 }
 
 
-function ResumeCard({
-  index,
-  file,
-  uploaded,
-  uploading,
-  onFileChange,
-  onUpload,
-}) {
+function ResumeCard({ index, file, uploaded, uploading, onFileChange, onUpload }) {
+  const hasUploaded = Boolean(uploaded?.url);
+
   return (
-    <div>
-      <label className="block">
-        <div className="relative border-2 border-dashed border-neutral-200 rounded-xl p-6 cursor-pointer hover:border-neutral-400 hover:bg-neutral-50 transition">
-          <input
-            type="file"
-            accept=".pdf"
-            onChange={(e) => onFileChange(index, e.target.files?.[0])}
-            className="hidden"
-          />
-          <div className="flex items-center gap-4">
-            <div className="flex-shrink-0">
-              <svg className="w-8 h-8 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
-              </svg>
-            </div>
-            <div className="flex-1">
-              {file ? (
-                <span className="text-sm text-emerald-700 font-medium">
-                  New: {file.name}
-                </span>
-              ) : uploaded ? (
-                <div>
-                  <p className="text-sm font-medium text-neutral-900">
-                    Resume {index + 1}
-                  </p>
-                  <p className="text-xs text-neutral-600">
-                    {uploaded.fileName || "Resume PDF"}
-                  </p>
-                </div>
-              ) : (
-                <div>
-                  <p className="text-sm font-medium text-neutral-900">
-                    Resume {index + 1}
-                  </p>
-                  <p className="text-xs text-neutral-600">
-                    Click to select a PDF file
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
+    <div className="flex items-center justify-between gap-4 p-4 bg-neutral-50 border border-neutral-200 rounded-xl hover:border-neutral-300 hover:bg-neutral-100 transition">
+      {/* File info */}
+      <label className="flex-1 flex items-center gap-4 cursor-pointer">
+        <input
+          type="file"
+          accept=".pdf"
+          onChange={(e) => onFileChange(index, e.target.files?.[0])}
+          className="hidden"
+        />
+        <div className="flex-shrink-0">
+          <svg className="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
+          </svg>
+        </div>
+        <div>
+          <p className="text-sm font-medium text-neutral-900">
+            {file ? `New: ${file.name}` : uploaded?.fileName || `Resume ${index + 1}`}
+          </p>
+          {!file && !uploaded && (
+            <p className="text-xs text-neutral-500">Click to select a PDF file</p>
+          )}
         </div>
       </label>
 
-      {uploaded && (
-        <div className="flex items-center gap-2 mt-2 p-3 bg-neutral-50 rounded-lg">
-          <a
-            href={uploaded.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-secondary btn-sm flex-1"
-          >
-            View Current Resume
-          </a>
-        </div>
-      )}
-
-      <div className="flex items-center gap-2 mt-2">
+      {/* Buttons */}
+      <div className="flex gap-2">
         <button
           type="button"
           onClick={() => onUpload(index)}
           disabled={uploading || !file}
-          className="btn btn-primary btn-sm"
+          className={`px-4 py-2 rounded-lg font-medium text-white transition ${
+            uploading || !file ? "bg-gray-400 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700"
+          }`}
         >
           {uploading ? "Uploading..." : "Upload"}
         </button>
+
+        <a
+          href={hasUploaded ? uploaded.url : "#"}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`px-4 py-2 rounded-lg font-medium text-white text-center transition ${
+            hasUploaded
+              ? "bg-blue-600 hover:bg-blue-700"
+              : "bg-gray-400 cursor-not-allowed pointer-events-none"
+          }`}
+        >
+          View
+        </a>
       </div>
     </div>
   );
 }
+
 
 function ResumeSection({
   resumeFiles,
