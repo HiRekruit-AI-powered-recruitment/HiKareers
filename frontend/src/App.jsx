@@ -12,6 +12,7 @@ import EditProfile from './features/profile/EditProfile';
 import Home from './features/home/Home';
 import Apply from './features/applications/Apply';
 import Applications from './features/applications/Applications';
+import Jobs from './features/jobs/Jobs';
 
 function App() {
   const location = useLocation();
@@ -63,6 +64,7 @@ function App() {
               }
             />
             {/* Add more protected routes as needed */}
+            <Route path="/jobs" element={<Jobs />} />
           </Routes>
         </main>
 
