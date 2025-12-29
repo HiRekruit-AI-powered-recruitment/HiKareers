@@ -13,6 +13,7 @@ import Home from './features/home/Home';
 import Apply from './features/applications/Apply';
 import Applications from './features/applications/Applications';
 import Jobs from './features/jobs/Jobs';
+import ChatBot from './features/chatbot/ChatBot';
 
 function App() {
   const location = useLocation();
@@ -23,6 +24,7 @@ function App() {
 
   return (
     <AuthProvider>
+      <ChatBot />
       <div className="min-h-screen bg-gray-50 flex flex-col">
         {showHeader && <Header />}
 
