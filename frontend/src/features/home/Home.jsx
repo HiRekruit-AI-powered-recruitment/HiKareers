@@ -14,6 +14,11 @@ import {
 const isAuthenticated = () => false;
 const getCurrentUser = () => null;
 
+// Handle Explore Jobs Button Click
+const handleExploreJobs = () => {
+  window.location.href = '/jobs';
+};
+
 // Feature Card Component
 function FeatureCard({ icon: Icon, title, description, color = 'blue' }) {
   const colorClasses = {
@@ -176,7 +181,10 @@ export default function Home() {
                   <button className="px-8 py-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/30">
                     Get Started Free
                   </button>
-                  <button className="px-8 py-4 bg-white/10 text-white rounded-lg font-semibold hover:bg-white/20 transition-colors backdrop-blur-sm border border-white/20">
+                  <button
+                    onClick={handleExploreJobs}
+                    className="px-8 py-4 bg-white/10 text-white rounded-lg font-semibold hover:bg-white/20 transition-colors backdrop-blur-sm border border-white/20"
+                  >
                     Explore Jobs
                   </button>
                 </>
