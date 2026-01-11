@@ -130,14 +130,6 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="/pricing"
-                  className="hover:text-white transition-colors"
-                >
-                  Pricing Plans
-                </a>
-              </li>
-              <li>
-                <a
                   href="/employer-dashboard"
                   className="hover:text-white transition-colors"
                 >
