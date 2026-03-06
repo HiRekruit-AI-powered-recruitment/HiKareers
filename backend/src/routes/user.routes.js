@@ -8,7 +8,7 @@ import {
     uploadUserResumes
 } from "../controllers/user.controller.js";
 import verifyUser from "../middlewares/Auth.middleware.js";
-import { uploadResume, handleMulterError } from "../middlewares/multer.middleware.js";
+import { uploadResume, handleMulterError } from "../middlewares/Multer.middleware.js";
 
 const router = Router();
 

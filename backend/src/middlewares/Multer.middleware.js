@@ -1,14 +1,21 @@
 import multer from 'multer';
 import ApiError from '../utils/ApiError.utils.js';
 
-// File filter for PDF only
+// Allowed resume MIME types: PDF, DOC, DOCX
+const ALLOWED_MIME_TYPES = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+];
+
+const ALLOWED_EXTENSIONS = ['pdf', 'doc', 'docx'];
+
+// File filter for resume validation
 const fileFilter = (req, file, cb) => {
-    const allowedMimeTypes = ['application/pdf'];
-    
-    if (allowedMimeTypes.includes(file.mimetype)) {
+    if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
         cb(null, true);
     } else {
-        cb(new ApiError(400, 'Only PDF files are allowed'), false);
+        cb(new ApiError(400, 'Only PDF, DOC, or DOCX files are allowed for resume upload'), false);
     }
 };
 
@@ -34,5 +41,4 @@ export const handleMulterError = (err, req, res, next) => {
     next(err);
 };
 
-
-// MemoryStorage v/s diskStorage:
+export { ALLOWED_EXTENSIONS };

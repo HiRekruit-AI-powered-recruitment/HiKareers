@@ -15,6 +15,13 @@ import Applications from './features/applications/Applications';
 import Jobs from './features/jobs/Jobs';
 import ChatBot from './features/chatbot/ChatBot';
 
+import AdminDashboard from './features/admin/AdminDashboard';
+import JobApplications from './features/admin/JobApplications';
+import AdminApplications from './features/admin/AdminApplications';
+import PostJob from './features/admin/PostJob';
+import EditJob from './features/admin/EditJob';
+import RecruiterJobs from './features/admin/RecruiterJobs';
+
 function App() {
   const location = useLocation();
   const showHeader =
@@ -58,6 +65,14 @@ function App() {
               }
             />
             <Route
+              path="/apply/:jobId"
+              element={
+                <ProtectedRoute>
+                  <Apply />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/applications"
               element={
                 <ProtectedRoute>
@@ -65,7 +80,57 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            {/* Add more protected routes as needed */}
+
+            {/* Admin Routes */}
+            <Route
+              path="/admin-dashboard"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/jobs/new"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <PostJob />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/applications"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <AdminApplications />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/jobs/:jobId/applications"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <JobApplications />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/jobs"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <RecruiterJobs />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/jobs/:jobId/edit"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <EditJob />
+                </ProtectedRoute>
+              }
+            />
+
             <Route path="/jobs" element={<Jobs />} />
           </Routes>
         </main>

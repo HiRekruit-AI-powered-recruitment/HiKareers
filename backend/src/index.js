@@ -7,14 +7,13 @@ import connectDB from './db/index.js';
 const port = process.env.PORT || 5000;
 const mongoUri = process.env.MONGO_URI;
 
-(async () => {
-  try {
-    await connectDB(mongoUri);
+connectDB(mongoUri)
+  .then(() => {
     app.listen(port, () => {
       console.log(`Server listening on port ${port}`);
     });
-  } catch (err) {
+  })
+  .catch((err) => {
     console.error('Failed to start server:', err.message);
     process.exit(1);
-  }
-})();
+  });

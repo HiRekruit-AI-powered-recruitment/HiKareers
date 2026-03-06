@@ -1,25 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Briefcase,
   MapPin,
   Clock,
-  DollarSign,
+  IndianRupee,
   Building2,
-  Search,
-  Filter,
-  X,
-  ChevronDown,
   Bookmark,
   BookmarkCheck,
 } from 'lucide-react';
 
-// JobCard Component
+// JobCard Component — works with both MongoDB _id and mock id fields
 const JobCard = ({ job, onApply, onSave, isSaved }) => {
   const [saved, setSaved] = useState(isSaved);
+  const jobId = job._id || job.id;
 
   const handleSave = () => {
     setSaved(!saved);
-    onSave(job.id);
+    onSave(jobId);
   };
 
   return (
@@ -39,18 +36,24 @@ const JobCard = ({ job, onApply, onSave, isSaved }) => {
                 <MapPin className="w-4 h-4" />
                 {job.location}
               </span>
-              <span className="flex items-center gap-1">
-                <Briefcase className="w-4 h-4" />
-                {job.type}
-              </span>
-              <span className="flex items-center gap-1">
-                <Clock className="w-4 h-4" />
-                {job.experience}
-              </span>
-              <span className="flex items-center gap-1">
-                <DollarSign className="w-4 h-4" />
-                {job.salary}
-              </span>
+              {(job.jobType || job.type) && (
+                <span className="flex items-center gap-1">
+                  <Briefcase className="w-4 h-4" />
+                  {job.jobType || job.type}
+                </span>
+              )}
+              {(job.experienceLevel || job.experience) && (
+                <span className="flex items-center gap-1">
+                  <Clock className="w-4 h-4" />
+                  {job.experienceLevel || job.experience}
+                </span>
+              )}
+              {job.salary && (
+                <span className="flex items-center gap-1">
+                  <IndianRupee className="w-4 h-4" />
+                  {job.salary}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -69,26 +72,34 @@ const JobCard = ({ job, onApply, onSave, isSaved }) => {
 
       <p className="text-gray-700 mb-4 line-clamp-2">{job.description}</p>
 
-      <div className="flex flex-wrap gap-2 mb-4">
-        {job.skills.slice(0, 5).map((skill, index) => (
-          <span
-            key={index}
-            className="px-3 py-1 bg-blue-50 text-blue-700 text-sm rounded-full font-medium"
-          >
-            {skill}
-          </span>
-        ))}
-        {job.skills.length > 5 && (
-          <span className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full font-medium">
-            +{job.skills.length - 5} more
-          </span>
-        )}
-      </div>
+      {job.skills && job.skills.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {job.skills.slice(0, 5).map((skill, index) => (
+            <span
+              key={index}
+              className="px-3 py-1 bg-blue-50 text-blue-700 text-sm rounded-full font-medium"
+            >
+              {skill}
+            </span>
+          ))}
+          {job.skills.length > 5 && (
+            <span className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full font-medium">
+              +{job.skills.length - 5} more
+            </span>
+          )}
+        </div>
+      )}
 
       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-        <span className="text-sm text-gray-500">Posted {job.postedDate}</span>
+        <span className="text-sm text-gray-500">
+          {job.postedDate
+            ? `Posted ${job.postedDate}`
+            : job.createdAt
+              ? `Posted ${new Date(job.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+              : ''}
+        </span>
         <button
-          onClick={() => onApply(job.id)}
+          onClick={() => onApply(jobId)}
           className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
         >
           Apply Now

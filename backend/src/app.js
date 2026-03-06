@@ -8,8 +8,22 @@ import cors from 'cors';
 const app = express();
 
 //Inbuilt Middleware
+const allowedOrigins = [
+  process.env.CORS_ORIGIN,
+  "http://localhost:5173",
+  "http://localhost:5174"
+].filter(Boolean);
+
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
   credentials: true
 }));
 
@@ -23,11 +37,13 @@ import authRouter from './routes/auth.routes.js';
 import userRouter from './routes/user.routes.js';
 import applicationRouter from './routes/application.routes.js';
 import verificationRouter from './routes/verification.routes.js';
+import jobRouter from './routes/job.routes.js';
 
 app.use("/v1/verification", verificationRouter);
 app.use("/v1/auth", authRouter)
 app.use("/v1/user", userRouter)
 app.use("/v1/application", applicationRouter)
+app.use("/v1/jobs", jobRouter)
 
 
 

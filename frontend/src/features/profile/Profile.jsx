@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { userAPI } from './api';
+import { adminAPI } from '../admin/api';
+import { Briefcase, Users, CheckCircle, Clock, ChevronRight } from 'lucide-react';
 
 /* ----------------------- Helpers ----------------------- */
 
@@ -14,7 +16,6 @@ function normalizeResumes(resumes) {
       result[index] = { ...resumes[key], slot: index + 1 };
     }
   });
-  
 
   return result;
 }
@@ -33,11 +34,11 @@ function formatDate(date) {
 
 /* ----------------------- Sections ----------------------- */
 
-function HeaderSection({ onEdit }) {
+function HeaderSection({ onEdit, title = "My Profile" }) {
   return (
     <div className="card flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <div>
-        <h1 className="text-3xl mb-2">My Profile</h1>
+        <h1 className="text-3xl mb-2">{title}</h1>
         <p className="text-neutral-600">Manage and view your profile information</p>
       </div>
       <button onClick={onEdit} className="btn btn-primary btn-lg w-full md:w-auto">
@@ -105,8 +106,6 @@ function Info({ label, value }) {
 }
 
 function ResumesSection({ resumes }) {
-  console.log("ResumesSection resumes:", resumes);
-
   const hasAnyResume = Array.isArray(resumes) && resumes.some(r => r);
 
   return (
@@ -118,7 +117,7 @@ function ResumesSection({ resumes }) {
       {hasAnyResume ? (
         <div className="space-y-4">
           {resumes.map((resume, index) => {
-            if (!resume) return null; // 👈 skip empty slots
+            if (!resume) return null;
 
             return (
               <div
@@ -161,7 +160,6 @@ function ResumesSection({ resumes }) {
 
 function EducationSection({ user }) {
   if (!user?.highestQualification || !user?.qualifications) return null;
-  console.log("EducationSection user:", user.highestQualification, user.qualifications);
 
   const qualificationLevels = {
     'tenth': ['tenth'],
@@ -174,45 +172,41 @@ function EducationSection({ user }) {
     qualificationLevels[user.highestQualification] || [];
 
   const renderBlock = (title, data) => {
-    console.log(`Rendering block for ${title}:`, data);
-  if (!data || typeof data !== 'object') return null;
+    if (!data || typeof data !== 'object') return null;
 
-  return (
-    <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-xl">
-      <h3 className="font-semibold text-neutral-900 mb-4">{title}</h3>
+    return (
+      <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-xl">
+        <h3 className="font-semibold text-neutral-900 mb-4">{title}</h3>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        {Object.entries(data).map(([key, value]) => {
-          if (key === 'completed') return null;
-          console.log("Rendering qualification field:", key, value);
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {Object.entries(data).map(([key, value]) => {
+            if (key === 'completed') return null;
 
-          const isMissing =
-            value === null || value === undefined || value === '';
+            const isMissing =
+              value === null || value === undefined || value === '';
 
-          return (
-            <div key={key}>
-              <label className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
-                {key}
-              </label>
+            return (
+              <div key={key}>
+                <label className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
+                  {key}
+                </label>
 
-              {isMissing ? (
-                <p className="mt-1 text-sm font-semibold text-red-600">
-                  Missing
-                </p>
-              ) : (
-                <p className="text-neutral-900 mt-1">
-                  {String(value)}
-                </p>
-              )}
-            </div>
-          );
-        })}
+                {isMissing ? (
+                  <p className="mt-1 text-sm font-semibold text-red-600">
+                    Missing
+                  </p>
+                ) : (
+                  <p className="text-neutral-900 mt-1">
+                    {String(value)}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
-    </div>
-  );
-};
-
-
+    );
+  };
 
   return (
     <div className="card">
@@ -246,21 +240,101 @@ function EducationSection({ user }) {
   );
 }
 
+/* ----------------------- Admin Sections ----------------------- */
+
+function RecruiterStatsSection({ stats }) {
+  const cards = [
+    { label: 'Jobs Posted', value: stats?.totalJobs || 0, icon: Briefcase, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Active Jobs', value: stats?.activeJobs || 0, icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50' },
+    { label: 'Applications', value: stats?.totalApplications || 0, icon: Users, color: 'text-purple-600', bg: 'bg-purple-50' },
+  ];
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {cards.map((card) => (
+        <div key={card.label} className="card p-6 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-neutral-500 uppercase tracking-wider">{card.label}</p>
+            <p className="text-3xl font-bold text-neutral-900 mt-1">{card.value}</p>
+          </div>
+          <div className={`p-3 rounded-xl ${card.bg}`}>
+            <card.icon className={`w-6 h-6 ${card.color}`} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RecentActivitySection({ jobs }) {
+  if (!jobs || jobs.length === 0) return null;
+
+  return (
+    <div className="card">
+      <h2 className="text-xl font-semibold mb-6 pb-4 border-b border-neutral-200">
+        Recent Job Posts
+      </h2>
+      <div className="space-y-4">
+        {jobs.slice(0, 5).map((job) => (
+          <Link
+            key={job._id}
+            to={`/admin/jobs/${job._id}/applications`}
+            className="flex items-center justify-between p-4 bg-neutral-50 border border-neutral-200 rounded-xl hover:border-blue-300 hover:bg-blue-50 transition group"
+          >
+            <div>
+              <p className="font-semibold text-neutral-900 group-hover:text-blue-600 transition-colors uppercase">
+                {job.title}
+              </p>
+              <div className="flex items-center gap-3 mt-1 text-xs text-neutral-500">
+                <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {job.applicationCount || 0} applicants</span>
+                <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Posted on {formatDate(job.createdAt)}</span>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-neutral-400 group-hover:text-blue-500 transition-colors" />
+          </Link>
+        ))}
+      </div>
+      {jobs.length > 5 && (
+        <Link
+          to="/admin/jobs"
+          className="block text-center mt-6 text-sm font-semibold text-blue-600 hover:text-blue-700"
+        >
+          View All Jobs
+        </Link>
+      )}
+    </div>
+  );
+}
+
 
 /* ----------------------- Main Container ----------------------- */
 
 export default function ProfilePage() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [recentJobs, setRecentJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const loadUserProfile = useCallback(async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await userAPI.getCurrentUser();
-      if (response?.success) {
-        setUser(response.data);
+      const userRes = await userAPI.getCurrentUser();
+
+      if (userRes?.success) {
+        setUser(userRes.data);
+
+        // If admin, load stats and jobs
+        if (userRes.data.userType === 'admin') {
+          const [statsRes, jobsRes] = await Promise.all([
+            adminAPI.getAdminStats(),
+            adminAPI.getAdminJobsAll(userRes.data._id)
+          ]);
+
+          if (statsRes.success) setStats(statsRes.data);
+          if (jobsRes.success) setRecentJobs(jobsRes.data.jobs || []);
+        }
       } else {
         setError('Failed to load profile');
       }
@@ -273,13 +347,13 @@ export default function ProfilePage() {
   }, []);
 
   useEffect(() => {
-    loadUserProfile();
-  }, [loadUserProfile]);
+    loadData();
+  }, [loadData]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
-        <p className="text-neutral-600">Loading your profile...</p>
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mb-4"></div>
       </div>
     );
   }
@@ -292,15 +366,28 @@ export default function ProfilePage() {
     );
   }
 
-  const resumes = normalizeResumes(user?.resumes);
-  console.log("Normalized resumes:", resumes);
+  const isAdmin = user?.userType === 'admin';
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-12">
-      <HeaderSection onEdit={() => navigate('/profile/edit')} />
+    <div className="max-w-4xl mx-auto space-y-6 pb-12 px-4">
+      <HeaderSection
+        onEdit={() => navigate('/profile/edit')}
+        title={isAdmin ? "My Recruiter Profile" : "My Profile"}
+      />
+
       <BasicInfoSection user={user} />
-      <ResumesSection resumes={resumes} />
-      <EducationSection user={user} />
+
+      {isAdmin ? (
+        <>
+          <RecruiterStatsSection stats={stats} />
+          <RecentActivitySection jobs={recentJobs} />
+        </>
+      ) : (
+        <>
+          <ResumesSection resumes={normalizeResumes(user?.resumes)} />
+          <EducationSection user={user} />
+        </>
+      )}
     </div>
   );
 }

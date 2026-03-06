@@ -1,4 +1,4 @@
-import asyncHandler from "../utils/asyncHnadler.utils.js"; 
+import asyncHandler from "../utils/asyncHandler.utils.js";
 import ApiError from "../utils/ApiError.utils.js";
 import { sendMail } from "../utils/sendEmail.utils.js";
 import otpGenerator from "otp-generator";
@@ -23,13 +23,13 @@ export const sendEmailVerificationOtp = asyncHandler(async (req, res) => {
   });
 
   await EmailVerification.findOneAndUpdate(
-      { _id: req.user._id },
-      {
-        otp: otp,
-        emailVerificationOtpExpiry: Date.now() + 5 * 60 * 1000  // 5 minutes expiry for now
-      },
-      { upsert: true, new: true, session }
-    );
+    { _id: req.user._id },
+    {
+      otp: otp,
+      emailVerificationOtpExpiry: Date.now() + 5 * 60 * 1000  // 5 minutes expiry for now
+    },
+    { upsert: true, new: true, session }
+  );
 
   await sendMail({
     to: email,
@@ -44,22 +44,22 @@ export const sendEmailVerificationOtp = asyncHandler(async (req, res) => {
 });
 
 export const verifyEmailOtp = asyncHandler(async (req, res) => {
-    const {otp} = req.body;
-    if(!otp)
-      throw new ApiError(400, "OTP not found");
+  const { otp } = req.body;
+  if (!otp)
+    throw new ApiError(400, "OTP not found");
 
-    const record = await EmailVerification.findOne({_id: req.user._id});
-    if(!record)
-      throw new ApiError(404, "No OTP record found, please request a new OTP");
+  const record = await EmailVerification.findOne({ _id: req.user._id });
+  if (!record)
+    throw new ApiError(404, "No OTP record found, please request a new OTP");
 
-    if(record.otp !== otp || record.emailVerificationOtpExpiry < Date.now())
-      throw new ApiError(400, "Invalid or expired OTP");
+  if (record.otp !== otp || record.emailVerificationOtpExpiry < Date.now())
+    throw new ApiError(400, "Invalid or expired OTP");
 
-    await User.findByIdAndUpdate(req.user._id, { emailVerified: true });
-    await EmailVerification.deleteOne({_id: req.user._id});
+  await User.findByIdAndUpdate(req.user._id, { emailVerified: true });
+  await EmailVerification.deleteOne({ _id: req.user._id });
 
-    res.status(200).json({
-      success: true,
-      message: "Email verified successfully"
-    });
+  res.status(200).json({
+    success: true,
+    message: "Email verified successfully"
+  });
 });

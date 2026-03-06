@@ -5,6 +5,9 @@ import { userAPI } from '../profile/api';
 import { isAuthenticated, getCurrentUser } from '../../utils/auth.js';
 import ProfileCompletionBanner from '../profile/components/ProfileCompletionBanner.jsx';
 
+const ALLOWED_FILE_TYPES = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+const ALLOWED_EXTENSIONS = ['pdf', 'doc', 'docx'];
+
 export default function Apply() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -40,6 +43,11 @@ export default function Apply() {
     backlogs: '0',
     selectedResumeUrl: ''
   });
+
+  // New state for direct file upload
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [fileError, setFileError] = useState('');
+  const [resumeMode, setResumeMode] = useState('profile'); // 'profile' | 'upload'
 
   const params = useParams();
 
@@ -130,6 +138,27 @@ export default function Apply() {
     setError('');
   }
 
+  function handleFileChange(e) {
+    const file = e.target.files[0];
+    setFileError('');
+    setUploadedFile(null);
+    if (!file) return;
+
+    // Validate file type
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!ALLOWED_FILE_TYPES.includes(file.type) && !ALLOWED_EXTENSIONS.includes(ext)) {
+      setFileError('Only PDF, DOC, or DOCX files are allowed.');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setFileError('File size must be under 5MB.');
+      e.target.value = '';
+      return;
+    }
+    setUploadedFile(file);
+  }
+
   function handleEducationChange(e) {
     const { name, value } = e.target;
     setForm((prev) => ({
@@ -161,13 +190,18 @@ export default function Apply() {
       return;
     }
 
-    if (!form.mobileNumber.trim()) {
+    if (!form.mobileNumber.toString().trim()) {
       setError('Mobile number is required');
       return;
     }
 
-    if (!form.selectedResumeUrl) {
-      setError('Please select a resume');
+    // Resume validation
+    if (resumeMode === 'upload' && !uploadedFile) {
+      setError('Please upload your resume (PDF, DOC, or DOCX).');
+      return;
+    }
+    if (resumeMode === 'profile' && !form.selectedResumeUrl) {
+      setError('Please select a resume from your profile.');
       return;
     }
 
@@ -176,19 +210,37 @@ export default function Apply() {
     setSuccess('');
 
     try {
-      const response = await applicationAPI.createApplication({
-        jobId: form.jobId,
-        fullName: form.fullName,
-        email: form.email,
-        mobileNumber: form.mobileNumber,
-        educationDetails: form.educationDetails.highestQualification ? form.educationDetails : null,
-        backlogs: form.backlogs,
-        resumeUrl: form.selectedResumeUrl
-      });
+      let response;
+
+      if (resumeMode === 'upload' && uploadedFile) {
+        // Send as multipart/form-data with the actual file
+        const formData = new FormData();
+        formData.append('resume', uploadedFile);
+        formData.append('jobId', form.jobId);
+        formData.append('fullName', form.fullName);
+        formData.append('email', form.email);
+        formData.append('mobileNumber', form.mobileNumber);
+        formData.append('backlogs', form.backlogs);
+        if (form.educationDetails.highestQualification) {
+          formData.append('educationDetails', JSON.stringify(form.educationDetails));
+        }
+        response = await applicationAPI.createApplicationWithFile(formData);
+      } else {
+        // Send JSON with existing resume URL from profile
+        response = await applicationAPI.createApplication({
+          jobId: form.jobId,
+          fullName: form.fullName,
+          email: form.email,
+          mobileNumber: form.mobileNumber,
+          educationDetails: form.educationDetails.highestQualification ? form.educationDetails : null,
+          backlogs: form.backlogs,
+          resumeUrl: form.selectedResumeUrl
+        });
+      }
 
       if (response.success) {
         setSuccess('Application submitted successfully!');
-        setTimeout(() => navigate('/'), 2000);
+        setTimeout(() => navigate('/applications'), 2000);
       } else {
         setError(response.message || 'Application submission failed');
       }
@@ -400,61 +452,134 @@ export default function Apply() {
             </div>
           </div>
 
-          {/* Resume Selection Section */}
+          {/* Resume Section */}
           <div className="pt-6 border-t border-neutral-200">
-            <h2 className="text-xl font-semibold mb-4">Select Resume *</h2>
+            <h2 className="text-xl font-semibold mb-4">Resume *</h2>
 
-            {normalizeResumes(user?.resumes).length > 0 ? (
-              <div className="space-y-3">
-                {normalizeResumes(user?.resumes).map((resume, index) => (
-                  <label key={index} className="flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition"
-                    style={{
-                      borderColor: form.selectedResumeUrl === resume.url ? '#171717' : '#e5e7eb',
-                      backgroundColor: form.selectedResumeUrl === resume.url ? '#f5f5f5' : 'transparent'
-                    }}>
-                    <input
-                      type="radio"
-                      name="selectedResumeUrl"
-                      value={resume.url}
-                      checked={form.selectedResumeUrl === resume.url}
-                      onChange={(e) => setForm((prev) => ({ ...prev, selectedResumeUrl: e.target.value }))}
-                      className="mt-1"
-                      disabled={submitting}
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <svg className="w-5 h-5 text-neutral-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M4 4a2 2 0 012-2h6a1 1 0 00-1-1H6a3 3 0 00-3 3v10a3 3 0 003 3h6a3 3 0 003-3V9a1 1 0 10-2 0v5a1 1 0 11-2 0V4z" />
-                        </svg>
-                        <p className="font-medium text-neutral-900">Resume {index + 1}</p>
+            {/* Resume mode toggle */}
+            <div className="flex gap-3 mb-5">
+              <button
+                type="button"
+                onClick={() => setResumeMode('profile')}
+                className={`px-4 py-2 rounded-lg border text-sm font-medium transition ${resumeMode === 'profile'
+                  ? 'bg-neutral-900 text-white border-neutral-900'
+                  : 'bg-white text-neutral-700 border-neutral-300 hover:border-neutral-500'
+                  }`}
+              >
+                Select from Profile
+              </button>
+              <button
+                type="button"
+                onClick={() => setResumeMode('upload')}
+                className={`px-4 py-2 rounded-lg border text-sm font-medium transition ${resumeMode === 'upload'
+                  ? 'bg-neutral-900 text-white border-neutral-900'
+                  : 'bg-white text-neutral-700 border-neutral-300 hover:border-neutral-500'
+                  }`}
+              >
+                Upload New Resume
+              </button>
+            </div>
+
+            {/* Profile resume selection */}
+            {resumeMode === 'profile' && (
+              normalizeResumes(user?.resumes).length > 0 ? (
+                <div className="space-y-3">
+                  {normalizeResumes(user?.resumes).map((resume, index) => (
+                    <label key={index} className="flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition"
+                      style={{
+                        borderColor: form.selectedResumeUrl === resume.url ? '#171717' : '#e5e7eb',
+                        backgroundColor: form.selectedResumeUrl === resume.url ? '#f5f5f5' : 'transparent'
+                      }}>
+                      <input
+                        type="radio"
+                        name="selectedResumeUrl"
+                        value={resume.url}
+                        checked={form.selectedResumeUrl === resume.url}
+                        onChange={(e) => setForm((prev) => ({ ...prev, selectedResumeUrl: e.target.value }))}
+                        className="mt-1"
+                        disabled={submitting}
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <svg className="w-5 h-5 text-neutral-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M4 4a2 2 0 012-2h6a1 1 0 00-1-1H6a3 3 0 00-3 3v10a3 3 0 003 3h6a3 3 0 003-3V9a1 1 0 10-2 0v5a1 1 0 11-2 0V4z" />
+                          </svg>
+                          <p className="font-medium text-neutral-900">Resume {index + 1}</p>
+                        </div>
+                        <p className="text-sm text-neutral-600">{resume.fileName || 'Resume PDF'}</p>
+                        <p className="text-xs text-neutral-500 mt-1">
+                          Uploaded {new Date(resume.uploadedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                        </p>
                       </div>
-                      <p className="text-sm text-neutral-600">{resume.fileName || 'Resume PDF'}</p>
-                      <p className="text-xs text-neutral-500 mt-1">
-                        Uploaded {new Date(resume.uploadedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 bg-neutral-50 rounded-xl border-2 border-dashed border-neutral-200">
+                  <svg className="w-12 h-12 text-neutral-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                  <p className="text-neutral-600 font-medium">No resumes in your profile</p>
+                  <p className="text-sm text-neutral-500 mt-1">Switch to "Upload New Resume" above, or add one in your profile</p>
+                </div>
+              )
+            )}
+
+            {/* Direct file upload */}
+            {resumeMode === 'upload' && (
+              <div className="space-y-3">
+                <label
+                  htmlFor="resume-upload"
+                  className="flex flex-col items-center justify-center w-full py-10 border-2 border-dashed rounded-xl cursor-pointer transition"
+                  style={{
+                    borderColor: uploadedFile ? '#171717' : '#e5e7eb',
+                    backgroundColor: uploadedFile ? '#f5f5f5' : 'transparent'
+                  }}
+                >
+                  {uploadedFile ? (
+                    <div className="text-center">
+                      <svg className="w-10 h-10 text-green-600 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <p className="font-semibold text-neutral-900">{uploadedFile.name}</p>
+                      <p className="text-sm text-neutral-500 mt-1">
+                        {(uploadedFile.size / 1024).toFixed(1)} KB — click to change
                       </p>
                     </div>
-                  </label>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 bg-neutral-50 rounded-xl border-2 border-dashed border-neutral-200">
-                <svg className="w-12 h-12 text-neutral-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-                <p className="text-neutral-600 font-medium">No resumes uploaded yet</p>
-                <p className="text-sm text-neutral-500 mt-1">Please upload a resume in your profile first</p>
+                  ) : (
+                    <div className="text-center">
+                      <svg className="w-10 h-10 text-neutral-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg>
+                      <p className="text-neutral-600 font-medium">Click to upload your resume</p>
+                      <p className="text-sm text-neutral-500 mt-1">PDF, DOC, or DOCX — max 5MB</p>
+                    </div>
+                  )}
+                  <input
+                    id="resume-upload"
+                    type="file"
+                    accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    disabled={submitting}
+                  />
+                </label>
+                {fileError && (
+                  <p className="text-sm text-red-600">{fileError}</p>
+                )}
               </div>
             )}
           </div>
 
           {/* Submit Button */}
           <div className="pt-6 border-t border-neutral-200">
-            {!isProfileComplete(user) && (
-              <p className="text-sm text-red-600 mb-3">Complete your profile before applying. <a href="/profile/edit" className="underline">Complete profile</a></p>
-            )}
             <button
               type="submit"
-              disabled={submitting || normalizeResumes(user?.resumes).length === 0 || !isProfileComplete(user)}
+              disabled={
+                submitting ||
+                (resumeMode === 'profile' && !form.selectedResumeUrl) ||
+                (resumeMode === 'upload' && !uploadedFile)
+              }
               className="btn btn-primary btn-lg w-full"
             >
               {submitting ? 'Submitting Application...' : 'Submit Application'}
