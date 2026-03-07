@@ -1,27 +1,24 @@
-import asyncHandler from "../utils/asyncHnadler.utils.js";
+import asyncHandler from "../utils/asyncHandler.utils.js";
 import ApiError from "../utils/ApiError.utils.js";
 import ApiResponse from "../utils/ApiResponse.utils.js";
-import { Application } from "../models/applications.moodel.js";
+import { Application } from "../models/applications.model.js";
 import { Job } from "../models/jobs.models.js";
 import { User } from "../models/users.models.js";
-import cloudinary from "../config/cloudinary.js";
-import streamifier from "streamifier";
 import UploadToCloudinary from "../utils/UploadToCloudinary.utils.js";
-import axios from "axios";
 
 export const createApplication = asyncHandler(async (req, res) => {
-    const { 
-        jobId, 
-        fullName, 
-        email, 
-        mobileNumber, 
-        educationDetails, 
+    const {
+        jobId,
+        fullName,
+        email,
+        mobileNumber,
+        educationDetails,
         backlogs,
-        resumeUrl 
+        resumeUrl  // fallback: URL of a resume already on Cloudinary (from user profile)
     } = req.body;
     const userId = req.user._id;
 
-    // Validation
+    // Validation — required fields
     if (!jobId) {
         throw new ApiError(400, "Job ID is required");
     }
@@ -30,15 +27,12 @@ export const createApplication = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Full name, email, and mobile number are required");
     }
 
-    if (!backlogs || !['0', '1', '2+'].includes(backlogs)) {
-        throw new ApiError(400, "Valid backlogs value is required (0, 1, or 2+)");
+    // Resume: either an uploaded file OR a pre-existing URL from user's profile
+    if (!req.file && !resumeUrl) {
+        throw new ApiError(400, "Resume is required to apply for a job.");
     }
 
-    if (!resumeUrl) {
-        throw new ApiError(400, "Resume URL is required");
-    }
-
-    // Check if job exists
+    // Check if job exists explicitly
     const job = await Job.findById(jobId);
     if (!job) {
         throw new ApiError(404, "Job not found");
@@ -46,7 +40,7 @@ export const createApplication = asyncHandler(async (req, res) => {
 
     // Check job deadline
     const currentDate = new Date();
-    if (new Date(job.endDate) < currentDate) {
+    if (job.endDate && new Date(job.endDate) < currentDate) {
         throw new ApiError(400, "Job application deadline has passed");
     }
 
@@ -56,50 +50,111 @@ export const createApplication = asyncHandler(async (req, res) => {
         throw new ApiError(400, "You have already applied for this job");
     }
 
-    try {
-        // Fetch resume from provided URL
-        const resumeResponse = await axios.get(resumeUrl, {
-            responseType: 'arraybuffer',
-            timeout: 10000
-        });
+    // Parse educationDetails safely
+    let parsedEducation = {};
+    if (educationDetails) {
+        try {
+            parsedEducation = typeof educationDetails === 'string'
+                ? JSON.parse(educationDetails)
+                : educationDetails;
+        } catch (_) {
+            parsedEducation = {};
+        }
+    }
 
-        const resumeBuffer = Buffer.from(resumeResponse.data);
+    // Map highestQualification from user-facing values to model enum
+    const qualMap = {
+        '10th': 'tenth',
+        'tenth': 'tenth',
+        '12th': 'twelfth',
+        'twelfth': 'twelfth',
+        'graduation': 'graduation',
+        'Graduation': 'graduation',
+        'postgraduation': 'postgraduation',
+        'Post Graduation': 'postgraduation'
+    };
+    const rawQual = parsedEducation.highestQualification || req.user.highestQualification;
+    const highestQualification = qualMap[rawQual] || 'graduation';
 
-        // Upload resume to Cloudinary
+    // Properly structure educationDetails based on schema
+    const structuredEducation = {
+        tenth: null,
+        twelfth: null,
+        graduation: null,
+        postgraduation: null
+    };
+
+    if (highestQualification && (parsedEducation.percentage || parsedEducation.cgpa)) {
+        structuredEducation[highestQualification] = {
+            percentage: parseFloat(parsedEducation.percentage) || null,
+            cgpa: parseFloat(parsedEducation.cgpa) || null,
+            endYear: parseInt(parsedEducation.yearOfPassing) || parseInt(parsedEducation.endYear) || null
+        };
+    }
+
+    // Sanitize backlogs safely (handles "2+", null, etc)
+    const backlogsNumber = parseInt(backlogs) || 0;
+
+    let finalResumeUrl = resumeUrl;
+    let finalResumePublicId = null;
+
+    // If a file was uploaded, upload it to Cloudinary
+    if (req.file) {
         const uploadResult = await UploadToCloudinary(
-            resumeBuffer,
+            req.file.buffer,
             `resumes/${jobId}`,
-            `${userId}`
+            `${userId}_${Date.now()}`
         );
+        finalResumeUrl = uploadResult.secure_url;
+        finalResumePublicId = uploadResult.public_id;
+    }
 
+    try {
         // Create application
         const application = await Application.create({
             jobId,
             userId,
             fullName,
             email,
-            mobileNumber,
-            educationDetails: educationDetails || {},
-            backlogs,
-            resumeUrl: uploadResult.secure_url,
-            resumePublicId: uploadResult.public_id,
+            mobileNumber: String(mobileNumber), // Ensure String format
+            highestQualification,
+            educationDetails: structuredEducation,
+            backlogs: backlogsNumber,
+            resumeUrl: finalResumeUrl,
+            resumePublicId: finalResumePublicId,
             currentStatus: 'APPLIED'
         });
 
-        // Populate user details before sending response
-        await application.populate('jobId', 'title company location endDate');
+        // Increment application count for the job
+        await Job.findByIdAndUpdate(jobId, { $inc: { applicationCount: 1 } });
+
+        // populate with error handling
+        try {
+            await application.populate('jobId', 'title company location endDate');
+        } catch (popErr) {
+            console.error("Populate error:", popErr);
+            // Non-critical, continue with unpopulated application
+        }
 
         return res
             .status(201)
             .json(new ApiResponse(201, "Application submitted successfully", application));
 
     } catch (error) {
-        if (error.response) {
-            throw new ApiError(400, "Failed to fetch resume from provided URL");
+        console.error("Application submission error:", error);
+        // Catch specific Mongoose validation errors or unique constraint violations
+        if (error.name === 'ValidationError') {
+            const messages = Object.values(error.errors).map(e => e.message);
+            throw new ApiError(400, "Validation Error: " + messages.join(", "));
         }
-        throw error;
+        if (error.code === 11000) {
+            throw new ApiError(400, "You have already applied for this job");
+        }
+        throw new ApiError(400, error.message || "Failed to submit application");
     }
 });
+
+
 
 
 export const updateApplication = asyncHandler(async (req, res) => {
@@ -242,7 +297,7 @@ export const acceptApplication = asyncHandler(async (req, res) => {
     }
 
     application.currentStatus = 'ACCEPTED';
-    
+
     application.statusLogs.push({
         status: 'ACCEPTED',
         updatedAt: new Date(),
@@ -259,6 +314,42 @@ export const acceptApplication = asyncHandler(async (req, res) => {
 
 
 //---------------------------------Just Added For HR/Admin Use Cases but must be handled in main module---------------------------------//
+
+// Get all applications (Admin use)
+export const getAllApplications = asyncHandler(async (req, res) => {
+    const { jobId, status, search, page = 1, limit = 20 } = req.query;
+
+    const query = {};
+    if (jobId) query.jobId = jobId;
+    if (status) query.currentStatus = status;
+    if (search) {
+        query.$or = [
+            { fullName: { $regex: search, $options: 'i' } },
+            { email: { $regex: search, $options: 'i' } }
+        ];
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const [applications, total] = await Promise.all([
+        Application.find(query)
+            .populate('jobId', 'title company')
+            .populate('userId', 'fullName email userName')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(parseInt(limit))
+            .lean(),
+        Application.countDocuments(query)
+    ]);
+
+    return res.status(200).json(new ApiResponse(200, "Applications fetched successfully", {
+        applications,
+        total,
+        page: parseInt(page),
+        totalPages: Math.ceil(total / parseInt(limit))
+    }));
+});
+
 
 // Get applications for a specific job (HR use)
 export const getJobApplications = asyncHandler(async (req, res) => {
@@ -285,8 +376,8 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
     const { newStatus, rejectionReason } = req.body;
     const updatedBy = req.user._id;
 
-    const validStatuses = ['APPLIED', 'UNDER_REVIEW', 'SHORTLISTED', 'REJECTED', 'WITHDRAWN', 'OFFERED', 'ACCEPTED'];
-    
+    const validStatuses = ['APPLIED', 'UNDER_REVIEW', 'SHORTLISTED', 'REJECTED', 'WITHDRAWN', 'OFFERED', 'ACCEPTED', 'INTERVIEW', 'HIRED'];
+
     if (!newStatus || !validStatuses.includes(newStatus)) {
         throw new ApiError(400, "Valid status is required");
     }
@@ -298,7 +389,7 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
 
     // Update status
     application.currentStatus = newStatus;
-    
+
     // Add rejection reason if status is REJECTED
     if (newStatus === 'REJECTED' && rejectionReason) {
         application.rejectionReason = rejectionReason;

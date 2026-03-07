@@ -53,6 +53,7 @@ function StatCard({ value, label }) {
 
 // CTA Section Component
 function CTASection({ isLoggedIn }) {
+  const navigate = useNavigate();
   return (
     <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl p-8 md:p-12 text-white">
       <div className="max-w-3xl mx-auto text-center">
@@ -66,19 +67,31 @@ function CTASection({ isLoggedIn }) {
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           {!isLoggedIn ? (
             <>
-              <button className="px-8 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors">
+              <button
+                onClick={() => navigate('/signup')}
+                className="px-8 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+              >
                 Create Free Account
               </button>
-              <button className="px-8 py-3 bg-blue-700 text-white rounded-lg font-semibold hover:bg-blue-800 transition-colors border border-blue-500">
+              <button
+                onClick={() => navigate('/jobs')}
+                className="px-8 py-3 bg-blue-700 text-white rounded-lg font-semibold hover:bg-blue-800 transition-colors border border-blue-500"
+              >
                 Browse Jobs
               </button>
             </>
           ) : (
             <>
-              <button className="px-8 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors">
+              <button
+                onClick={() => navigate('/interview')}
+                className="px-8 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+              >
                 Start Mock Interview
               </button>
-              <button className="px-8 py-3 bg-blue-700 text-white rounded-lg font-semibold hover:bg-blue-800 transition-colors border border-blue-500">
+              <button
+                onClick={() => navigate('/jobs')}
+                className="px-8 py-3 bg-blue-700 text-white rounded-lg font-semibold hover:bg-blue-800 transition-colors border border-blue-500"
+              >
                 View Matched Jobs
               </button>
             </>
@@ -105,43 +118,33 @@ function ProfileCompletionBanner() {
             Complete your profile to get better job matches and increase your
             chances by 70%
           </p>
-          <button className="text-sm font-medium text-amber-700 hover:text-amber-800 underline">
+          <Link
+            to="/profile"
+            className="text-sm font-medium text-amber-700 hover:text-amber-800 underline"
+          >
             Complete Now →
-          </button>
+          </Link>
         </div>
       </div>
     </div>
   );
 }
 
+import { Navigate, Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext.jsx';
+
 export default function Home() {
-  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
+  const { user, isAuthenticated: isLoggedIn, isLoading } = useAuth();
   const [loading, setLoading] = useState(false);
-  const isLoggedIn = isAuthenticated();
 
-  useEffect(() => {
-    if (isLoggedIn) {
-      loadUserData();
-    }
-  }, [isLoggedIn]);
+  if (isLoading) return null;
 
-  async function loadUserData() {
-    try {
-      setLoading(true);
-      // Simulated API call
-      const mockUser = {
-        name: 'John Doe',
-        profileCompleted: false,
-      };
-      setUser(mockUser);
-    } catch (err) {
-      console.error('Failed to load user data:', err);
-      setUser(getCurrentUser());
-    } finally {
-      setLoading(false);
-    }
+  if (isLoggedIn && user?.userType === 'admin') {
+    return <Navigate to="/admin-dashboard" replace />;
   }
 
+  // Simplified loadUserData just for banner visibility logic
   const showCompletionBanner = isLoggedIn && user && !user.profileCompleted;
 
   return (
@@ -190,10 +193,16 @@ export default function Home() {
                 </>
               ) : (
                 <>
-                  <button className="px-8 py-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/30">
+                  <button
+                    onClick={() => navigate('/profile')}
+                    className="px-8 py-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/30"
+                  >
                     View My Profile
                   </button>
-                  <button className="px-8 py-4 bg-white/10 text-white rounded-lg font-semibold hover:bg-white/20 transition-colors backdrop-blur-sm border border-white/20">
+                  <button
+                    onClick={() => navigate('/jobs')}
+                    className="px-8 py-4 bg-white/10 text-white rounded-lg font-semibold hover:bg-white/20 transition-colors backdrop-blur-sm border border-white/20"
+                  >
                     Browse Jobs
                   </button>
                 </>

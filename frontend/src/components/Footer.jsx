@@ -8,10 +8,14 @@ import {
   LogOut,
   ChevronDown,
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import logo from '../assets/hikareers_logo.png';
+
 // Footer Component
 export function Footer() {
   const currentYear = new Date().getFullYear();
+  const { user, isAuthenticated } = useAuth();
+  const isAdmin = isAuthenticated && user?.userType === 'admin';
 
   return (
     <footer className="bg-gray-900 text-gray-300">
@@ -81,14 +85,16 @@ export function Footer() {
                   Browse Jobs
                 </a>
               </li>
-              <li>
-                <a
-                  href="/interview"
-                  className="hover:text-white transition-colors"
-                >
-                  Mock Interview
-                </a>
-              </li>
+              {!isAdmin && (
+                <li>
+                  <a
+                    href="/interview"
+                    className="hover:text-white transition-colors"
+                  >
+                    Mock Interview
+                  </a>
+                </li>
+              )}
               <li>
                 <a
                   href="/profile"
@@ -97,14 +103,16 @@ export function Footer() {
                   Create Profile
                 </a>
               </li>
-              <li>
-                <a
-                  href="/applications"
-                  className="hover:text-white transition-colors"
-                >
-                  Track Applications
-                </a>
-              </li>
+              {!isAdmin && (
+                <li>
+                  <a
+                    href="/applications"
+                    className="hover:text-white transition-colors"
+                  >
+                    Track Applications
+                  </a>
+                </li>
+              )}
               <li>
                 <a
                   href="/career-resources"
@@ -122,7 +130,7 @@ export function Footer() {
             <ul className="space-y-2 text-sm">
               <li>
                 <a
-                  href="/post-job"
+                  href={isAdmin ? "/admin/jobs/new" : "/post-job"}
                   className="hover:text-white transition-colors"
                 >
                   Post a Job
@@ -130,7 +138,7 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="/employer-dashboard"
+                  href={isAdmin ? "/admin-dashboard" : "/employer-dashboard"}
                   className="hover:text-white transition-colors"
                 >
                   Employer Dashboard
@@ -154,6 +162,7 @@ export function Footer() {
               </li>
             </ul>
           </div>
+
 
           {/* Company */}
           <div>

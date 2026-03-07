@@ -5,7 +5,7 @@ import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { isProfileCompleted, isQualificationCompleted } from "./helperFunctions.models.js";
-import {watchedFields} from "./constants.models.js";
+import { watchedFields } from "./constants.models.js";
 
 const resume = mongoose.Schema(
   {
@@ -37,6 +37,11 @@ const userSchema = mongoose.Schema(
       unique: true,
       trim: true,
       index: true,
+    },
+    userType: {
+      type: String,
+      enum: ["applicant", "admin"],
+      default: "applicant",
     },
     fullName: {
       type: String,
@@ -151,7 +156,7 @@ userSchema.pre("save", function () {
 });
 
 userSchema.pre("save", function () {
-  
+
   if (!watchedFields.some((f) => this.isModified(f))) {
     return;
   }
@@ -189,8 +194,8 @@ userSchema.methods.generateAccessToken = async function () {
   };
 
   const options = {
-    expiresIn: process.env.ACCESS_TOKEN_EXPIRY, 
-    algorithm: "HS256", 
+    expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
+    algorithm: "HS256",
   };
 
   const accessToken = await jwt.sign(

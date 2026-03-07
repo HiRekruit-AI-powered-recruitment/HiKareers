@@ -8,6 +8,7 @@ import {
   LogOut,
   ChevronDown,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import logo from '../assets/hikareers_logo.png';
 import { useAuth } from '../contexts/AuthContext.jsx';
 
@@ -15,13 +16,16 @@ import { useAuth } from '../contexts/AuthContext.jsx';
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, isAuthenticated: loggedIn, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const isAdmin = user?.userType === 'admin';
 
   function handleLogout() {
     logout();
   }
 
   function handleApply() {
-    console.log('Navigate to apply');
+    navigate('/apply');
   }
 
   return (
@@ -40,29 +44,50 @@ export function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
             <a
-              href="/"
+              href={isAdmin ? '/admin-dashboard' : '/'}
               className="px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium"
             >
               Home
             </a>
             <a
-              href="/jobs"
+              href={isAdmin ? '/admin/jobs' : '/jobs'}
               className="px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium"
             >
               Jobs
             </a>
-            <a
-              href="/applications"
-              className="px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium"
-            >
-              Applications
-            </a>
-            <a
-              href="/interview"
-              className="px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium"
-            >
-              Mock Interview
-            </a>
+            {loggedIn && !isAdmin && (
+              <a
+                href="/applications"
+                className="px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium"
+              >
+                Applications
+              </a>
+            )}
+
+            {isAdmin && (
+              <>
+                <a
+                  href="/admin/applications"
+                  className="px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium"
+                >
+                  Job Applicants
+                </a>
+                <a
+                  href="/admin/jobs/new"
+                  className="px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium"
+                >
+                  Post Job
+                </a>
+              </>
+            )}
+            {!isAdmin && (
+              <a
+                href="/interview"
+                className="px-4 py-2 text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors font-medium"
+              >
+                Mock Interview
+              </a>
+            )}
           </nav>
 
           {/* Right Side Actions */}
@@ -70,10 +95,10 @@ export function Header() {
             {loggedIn ? (
               <>
                 <button
-                  onClick={handleApply}
+                  onClick={isAdmin ? () => navigate('/admin/jobs/new') : handleApply}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
                 >
-                  Apply for Job
+                  {isAdmin ? 'Post a Job' : 'Apply for Job'}
                 </button>
 
                 {/* User Menu */}
@@ -97,13 +122,16 @@ export function Header() {
                       <User className="w-4 h-4" />
                       <span className="text-sm">My Profile</span>
                     </a>
-                    <a
-                      href="/applications"
-                      className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
-                    >
-                      <FileText className="w-4 h-4" />
-                      <span className="text-sm">My Applications</span>
-                    </a>
+                    {!isAdmin && (
+                      <a
+                        href="/applications"
+                        className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span className="text-sm">My Applications</span>
+                      </a>
+                    )}
+
                     <hr className="my-1 border-gray-200" />
                     <button
                       onClick={handleLogout}
@@ -121,7 +149,7 @@ export function Header() {
                   href="/login"
                   className="px-4 py-2 text-gray-700 hover:text-blue-600 font-medium transition-colors"
                 >
-                  Login
+                  Sign In
                 </a>
                 <a
                   href="/signup"
@@ -151,29 +179,50 @@ export function Header() {
           <div className="md:hidden py-4 border-t border-gray-200">
             <nav className="flex flex-col gap-2">
               <a
-                href="/"
+                href={isAdmin ? '/admin-dashboard' : '/'}
                 className="px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
               >
                 Home
               </a>
               <a
-                href="/jobs"
+                href={isAdmin ? '/admin/jobs' : '/jobs'}
                 className="px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
               >
                 Jobs
               </a>
-              <a
-                href="/applications"
-                className="px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-              >
-                Applications
-              </a>
-              <a
-                href="/interview"
-                className="px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-              >
-                Mock Interview
-              </a>
+              {loggedIn && !isAdmin && (
+                <a
+                  href="/applications"
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  Applications
+                </a>
+              )}
+
+              {isAdmin && (
+                <>
+                  <a
+                    href="/admin/applications"
+                    className="px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                  >
+                    Job Applicants
+                  </a>
+                  <a
+                    href="/admin/jobs/new"
+                    className="px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                  >
+                    Post Job
+                  </a>
+                </>
+              )}
+              {!isAdmin && (
+                <a
+                  href="/interview"
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  Mock Interview
+                </a>
+              )}
 
               {loggedIn ? (
                 <>
@@ -184,10 +233,10 @@ export function Header() {
                     My Profile
                   </a>
                   <button
-                    onClick={handleApply}
+                    onClick={user?.userType === 'admin' ? () => { navigate('/admin/jobs/new'); setMobileMenuOpen(false); } : handleApply}
                     className="mx-4 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
                   >
-                    Apply for Job
+                    {user?.userType === 'admin' ? 'Post a Job' : 'Apply for Job'}
                   </button>
                   <button
                     onClick={handleLogout}
@@ -202,7 +251,7 @@ export function Header() {
                     href="/login"
                     className="px-4 py-2 text-center border border-blue-600 text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
                   >
-                    Login
+                    Sign In
                   </a>
                   <a
                     href="/signup"

@@ -8,13 +8,15 @@ const STATUS = [
   'WITHDRAWN',
   'OFFERED',
   'ACCEPTED',
+  'INTERVIEW',
+  'HIRED',
 ];
 
 const StatusLogSchema = new mongoose.Schema(
   {
     status: { type: String, enum: STATUS, required: true },
     updatedAt: { type: Date, default: Date.now },
-    updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
+    updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   },
   { _id: false }
 );
@@ -23,12 +25,12 @@ const ApplicationSchema = new mongoose.Schema(
   {
     jobId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'jobs',
+      ref: 'Job',
       required: true,
     },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'users',
+      ref: 'User',
       required: true,
     },
     resumeUrl: { type: String, required: true },
@@ -40,7 +42,7 @@ const ApplicationSchema = new mongoose.Schema(
     // Application form data
     email: { type: String, required: true, trim: true, lowercase: true },
     fullName: { type: String, required: true, trim: true },
-    mobileNumber: { type: Number, required: true },
+    mobileNumber: { type: String, required: true },
     highestQualification: {
       type: String,
       enum: ["tenth", "twelfth", "graduation", "postgraduation"],

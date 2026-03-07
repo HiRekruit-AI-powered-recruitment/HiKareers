@@ -18,6 +18,29 @@ const jobSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    salary: {
+        type: String,
+        default: null
+    },
+    jobType: {
+        type: String,
+        enum: ['Full-time', 'Part-time', 'Internship', 'Contract'],
+        default: null
+    },
+    workMode: {
+        type: String,
+        enum: ['Remote', 'On-site', 'Hybrid'],
+        default: null
+    },
+    experienceLevel: {
+        type: String,
+        enum: ['Fresher', 'Junior', 'Experienced', 'Entry Level', 'Mid-Senior Level', 'Director', 'Executive'],
+        default: null
+    },
+    skills: {
+        type: [String],
+        default: []
+    },
     endDate: {
         type: Date,
         required: true
@@ -29,8 +52,12 @@ const jobSchema = new mongoose.Schema({
     },
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'users',
+        ref: 'User',
         required: true
+    },
+    applicationCount: {
+        type: Number,
+        default: 0
     }
 }, { timestamps: true });
 

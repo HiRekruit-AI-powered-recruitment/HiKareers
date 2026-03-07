@@ -33,8 +33,8 @@ export default function ChatBot() {
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [position, setPosition] = useState({
-    x: window.innerWidth - 90,
-    y: window.innerHeight - 90,
+    right: 20,
+    bottom: 20,
   });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -64,16 +64,17 @@ export default function ChatBot() {
   const handleMouseMove = (e) => {
     if (!isDragging) return;
 
-    const newX = e.clientX - dragOffset.x;
-    const newY = e.clientY - dragOffset.y;
+    // Calculate new position from right and bottom
+    const newRight = window.innerWidth - e.clientX - (64 - dragOffset.x);
+    const newBottom = window.innerHeight - e.clientY - (64 - dragOffset.y);
 
     // Keep within viewport bounds
-    const maxX = window.innerWidth - 400;
-    const maxY = window.innerHeight - 600;
+    const maxRight = window.innerWidth - 80;
+    const maxBottom = window.innerHeight - 80;
 
     setPosition({
-      x: Math.max(0, Math.min(newX, maxX)),
-      y: Math.max(0, Math.min(newY, maxY)),
+      right: Math.max(10, Math.min(newRight, maxRight)),
+      bottom: Math.max(10, Math.min(newBottom, maxBottom)),
     });
   };
 
@@ -90,7 +91,7 @@ export default function ChatBot() {
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
-  }, [isDragging, dragOffset]);
+  }, [isDragging]);
 
   // Mock bot responses based on user input
   const getBotResponse = (userMessage) => {
@@ -211,24 +212,18 @@ export default function ChatBot() {
     <div
       style={{
         position: 'fixed',
-        bottom:
-          isOpen && !isMinimized
-            ? 'auto'
-            : `${window.innerHeight - position.y - 70}px`,
-        right:
-          isOpen && !isMinimized
-            ? '20px'
-            : `${window.innerWidth - position.x - 70}px`,
+        bottom: `${position.bottom}px`,
+        right: `${position.right}px`,
         zIndex: 9999,
         cursor: isDragging ? 'grabbing' : 'default',
+        transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       }}
     >
       {/* Chat Window */}
       {isOpen && (
         <div
-          className={`bg-white rounded-2xl shadow-2xl border border-gray-200 mb-4 transition-all duration-300 ${
-            isMinimized ? 'h-16' : 'h-[600px]'
-          } w-[400px] flex flex-col`}
+          className={`bg-white rounded-2xl shadow-2xl border border-gray-200 mb-4 transition-all duration-300 ${isMinimized ? 'h-16' : 'h-[min(600px,calc(100vh-160px))]'
+            } w-[min(400px,calc(100vw-40px))] flex flex-col`}
         >
           {/* Header */}
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 rounded-t-2xl flex items-center justify-between">
@@ -276,9 +271,8 @@ export default function ChatBot() {
                 {messages.map((message) => (
                   <div
                     key={message.id}
-                    className={`flex ${
-                      message.type === 'user' ? 'justify-end' : 'justify-start'
-                    } gap-2`}
+                    className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'
+                      } gap-2`}
                   >
                     {message.type === 'bot' && (
                       <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
@@ -287,16 +281,14 @@ export default function ChatBot() {
                     )}
 
                     <div
-                      className={`max-w-[75%] ${
-                        message.type === 'user' ? 'order-1' : ''
-                      }`}
+                      className={`max-w-[75%] ${message.type === 'user' ? 'order-1' : ''
+                        }`}
                     >
                       <div
-                        className={`rounded-2xl px-4 py-3 ${
-                          message.type === 'user'
-                            ? 'bg-blue-600 text-white rounded-br-none'
-                            : 'bg-white text-gray-800 border border-gray-200 rounded-bl-none shadow-sm'
-                        }`}
+                        className={`rounded-2xl px-4 py-3 ${message.type === 'user'
+                          ? 'bg-blue-600 text-white rounded-br-none'
+                          : 'bg-white text-gray-800 border border-gray-200 rounded-bl-none shadow-sm'
+                          }`}
                       >
                         <p className="text-sm whitespace-pre-line leading-relaxed">
                           {message.text}

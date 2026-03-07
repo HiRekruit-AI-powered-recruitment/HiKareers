@@ -3,26 +3,19 @@ import {
   Briefcase,
   MapPin,
   Clock,
-  DollarSign,
-  Building2,
   Search,
   Filter,
-  X,
   ChevronDown,
   Bookmark,
   BookmarkCheck,
+  Calendar,
 } from 'lucide-react';
-
+import { useNavigate } from 'react-router-dom';
+import { jobAPI } from '../applications/api';
 import JobCard from './JobCard';
 
 // Filter Section Component
-function FilterSection({
-  title,
-  options,
-  selected,
-  onChange,
-  type = 'checkbox',
-}) {
+function FilterSection({ title, options, selected, onChange }) {
   const [isOpen, setIsOpen] = useState(true);
 
   return (
@@ -32,28 +25,21 @@ function FilterSection({
         className="flex items-center justify-between w-full text-left mb-3"
       >
         <h3 className="font-semibold text-gray-900">{title}</h3>
-        <ChevronDown
-          className={`w-5 h-5 text-gray-500 transition-transform ${
-            isOpen ? 'rotate-180' : ''
-          }`}
-        />
+        <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
       {isOpen && (
         <div className="space-y-2">
           {options.map((option) => (
-            <label
-              key={option.value}
-              className="flex items-center cursor-pointer group"
-            >
+            <label key={option.value} className="flex items-center cursor-pointer group">
               <input
-                type={type}
+                type="checkbox"
                 checked={selected.includes(option.value)}
                 onChange={() => onChange(option.value)}
                 className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
               <span className="ml-3 text-sm text-gray-700 group-hover:text-gray-900">
                 {option.label}
-                {option.count && (
+                {option.count !== undefined && (
                   <span className="text-gray-400 ml-1">({option.count})</span>
                 )}
               </span>
@@ -67,181 +53,71 @@ function FilterSection({
 
 // Main Jobs Component
 export default function Jobs() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [locationQuery, setLocationQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [savedJobs, setSavedJobs] = useState([]);
+
+  // API state
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [total, setTotal] = useState(0);
 
   // Filter states
   const [jobTypes, setJobTypes] = useState([]);
   const [experienceLevels, setExperienceLevels] = useState([]);
   const [techStacks, setTechStacks] = useState([]);
   const [workModes, setWorkModes] = useState([]);
-  const [salaryRanges, setSalaryRanges] = useState([]);
 
-  // Mock jobs data
-  const [jobs] = useState([
-    {
-      id: 1,
-      title: 'Senior Frontend Developer',
-      company: 'TechCorp Solutions',
-      location: 'Bangalore, India',
-      type: 'Full-time',
-      experience: '3-5 years',
-      salary: '₹15-25 LPA',
-      description:
-        'We are looking for an experienced Frontend Developer to join our team. You will be responsible for building responsive web applications using React and modern JavaScript.',
-      skills: ['React', 'JavaScript', 'TypeScript', 'CSS', 'Redux'],
-      postedDate: '2 days ago',
-      workMode: 'Hybrid',
-      experienceLevel: 'Experienced',
-    },
-    {
-      id: 2,
-      title: 'Backend Developer - Node.js',
-      company: 'StartupXYZ',
-      location: 'Mumbai, India',
-      type: 'Full-time',
-      experience: '2-4 years',
-      salary: '₹12-20 LPA',
-      description:
-        'Join our fast-growing startup as a Backend Developer. Work on scalable microservices architecture using Node.js, Express, and MongoDB.',
-      skills: ['Node.js', 'Express', 'MongoDB', 'AWS', 'Docker'],
-      postedDate: '1 week ago',
-      workMode: 'Remote',
-      experienceLevel: 'Experienced',
-    },
-    {
-      id: 3,
-      title: 'Full Stack Developer Intern',
-      company: 'InnovateTech',
-      location: 'Pune, India',
-      type: 'Internship',
-      experience: '0-1 years',
-      salary: '₹20-30k/month',
-      description:
-        'Great opportunity for freshers! Learn and work on real projects using MERN stack. Mentorship provided by senior developers.',
-      skills: ['JavaScript', 'React', 'Node.js', 'MongoDB', 'Git'],
-      postedDate: '3 days ago',
-      workMode: 'On-site',
-      experienceLevel: 'Fresher',
-    },
-    {
-      id: 4,
-      title: 'DevOps Engineer',
-      company: 'CloudScale Inc',
-      location: 'Hyderabad, India',
-      type: 'Full-time',
-      experience: '4-6 years',
-      salary: '₹18-28 LPA',
-      description:
-        'Looking for a skilled DevOps Engineer to manage our cloud infrastructure, CI/CD pipelines, and ensure high availability of services.',
-      skills: ['AWS', 'Docker', 'Kubernetes', 'Jenkins', 'Python'],
-      postedDate: '5 days ago',
-      workMode: 'Hybrid',
-      experienceLevel: 'Experienced',
-    },
-    {
-      id: 5,
-      title: 'React Native Developer',
-      company: 'MobileFirst Apps',
-      location: 'Delhi NCR, India',
-      type: 'Contract',
-      experience: '2-3 years',
-      salary: '₹10-18 LPA',
-      description:
-        'Build beautiful mobile applications for iOS and Android using React Native. Work with a talented team on consumer-facing products.',
-      skills: ['React Native', 'JavaScript', 'Redux', 'Firebase', 'REST API'],
-      postedDate: '1 day ago',
-      workMode: 'Remote',
-      experienceLevel: 'Experienced',
-    },
-    {
-      id: 6,
-      title: 'Java Developer - Fresher',
-      company: 'Enterprise Solutions Ltd',
-      location: 'Chennai, India',
-      type: 'Full-time',
-      experience: '0-1 years',
-      salary: '₹3-5 LPA',
-      description:
-        'Fresh graduates welcome! Work on enterprise Java applications. Training will be provided on Spring Boot, Microservices, and best practices.',
-      skills: ['Java', 'Spring Boot', 'MySQL', 'REST API', 'Git'],
-      postedDate: '1 week ago',
-      workMode: 'On-site',
-      experienceLevel: 'Fresher',
-    },
-    {
-      id: 7,
-      title: 'Data Scientist',
-      company: 'AI Innovations',
-      location: 'Bangalore, India',
-      type: 'Full-time',
-      experience: '3-5 years',
-      salary: '₹20-35 LPA',
-      description:
-        'Join our AI team to build machine learning models and extract insights from large datasets. Experience with Python and ML frameworks required.',
-      skills: ['Python', 'Machine Learning', 'TensorFlow', 'SQL', 'Statistics'],
-      postedDate: '4 days ago',
-      workMode: 'Hybrid',
-      experienceLevel: 'Experienced',
-    },
-    {
-      id: 8,
-      title: 'UI/UX Designer',
-      company: 'DesignStudio',
-      location: 'Mumbai, India',
-      type: 'Full-time',
-      experience: '2-4 years',
-      salary: '₹8-15 LPA',
-      description:
-        'Create stunning user interfaces and seamless user experiences. Work closely with developers to bring designs to life.',
-      skills: [
-        'Figma',
-        'Adobe XD',
-        'Prototyping',
-        'User Research',
-        'Wireframing',
-      ],
-      postedDate: '2 days ago',
-      workMode: 'Hybrid',
-      experienceLevel: 'Experienced',
-    },
-  ]);
+  // Fetch jobs from the backend
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchJobs();
+    return () => controller.abort();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Filter options
+  async function fetchJobs() {
+    try {
+      setLoading(true);
+      setError('');
+      const response = await jobAPI.getAllJobs({ limit: 50 });
+      if (response.success) {
+        setJobs(response.data.jobs || []);
+        setTotal(response.data.total || 0);
+      } else {
+        setError(response.message || 'Failed to load jobs');
+      }
+    } catch (err) {
+      setError('Failed to load jobs. Please try again.');
+      console.error('Jobs fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Filter options — derived dynamically from actual job data
   const filterOptions = {
     jobTypes: [
-      { value: 'Full-time', label: 'Full-time', count: 5 },
-      { value: 'Internship', label: 'Internship', count: 1 },
-      { value: 'Contract', label: 'Contract', count: 1 },
-      { value: 'Part-time', label: 'Part-time', count: 0 },
+      { value: 'Full-time', label: 'Full-time' },
+      { value: 'Part-time', label: 'Part-time' },
+      { value: 'Internship', label: 'Internship' },
+      { value: 'Contract', label: 'Contract' },
     ],
     experienceLevels: [
-      { value: 'Fresher', label: 'Fresher (0-1 years)', count: 2 },
-      { value: 'Junior', label: 'Junior (1-3 years)', count: 0 },
-      { value: 'Experienced', label: 'Experienced (3+ years)', count: 6 },
-    ],
-    techStacks: [
-      { value: 'React', label: 'React', count: 3 },
-      { value: 'Node.js', label: 'Node.js', count: 3 },
-      { value: 'JavaScript', label: 'JavaScript', count: 4 },
-      { value: 'Python', label: 'Python', count: 2 },
-      { value: 'Java', label: 'Java', count: 1 },
-      { value: 'AWS', label: 'AWS', count: 2 },
-      { value: 'Docker', label: 'Docker', count: 2 },
-      { value: 'MongoDB', label: 'MongoDB', count: 2 },
+      { value: 'Fresher', label: 'Fresher (0-1 years)' },
+      { value: 'Junior', label: 'Junior (1-3 years)' },
+      { value: 'Experienced', label: 'Experienced (3+ years)' },
+      { value: 'Entry Level', label: 'Entry Level' },
+      { value: 'Mid-Senior Level', label: 'Mid-Senior Level' },
+      { value: 'Director', label: 'Director' },
+      { value: 'Executive', label: 'Executive' },
     ],
     workModes: [
-      { value: 'Remote', label: 'Remote', count: 2 },
-      { value: 'On-site', label: 'On-site', count: 2 },
-      { value: 'Hybrid', label: 'Hybrid', count: 4 },
-    ],
-    salaryRanges: [
-      { value: '0-5', label: '₹0-5 LPA', count: 1 },
-      { value: '5-10', label: '₹5-10 LPA', count: 1 },
-      { value: '10-20', label: '₹10-20 LPA', count: 3 },
-      { value: '20+', label: '₹20+ LPA', count: 3 },
+      { value: 'Remote', label: 'Remote' },
+      { value: 'On-site', label: 'On-site' },
+      { value: 'Hybrid', label: 'Hybrid' },
     ],
   };
 
@@ -258,70 +134,58 @@ export default function Jobs() {
     setExperienceLevels([]);
     setTechStacks([]);
     setWorkModes([]);
-    setSalaryRanges([]);
   };
 
-  const activeFiltersCount =
-    jobTypes.length +
-    experienceLevels.length +
-    techStacks.length +
-    workModes.length +
-    salaryRanges.length;
+  const activeFiltersCount = jobTypes.length + experienceLevels.length + techStacks.length + workModes.length;
 
-  // Filter jobs based on selected filters
+  // Client-side filtering
   const filteredJobs = jobs.filter((job) => {
-    // Search query filter
-    if (
-      searchQuery &&
-      !job.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      !job.company.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      !job.skills.some((skill) =>
-        skill.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    ) {
+    // Search query filtering
+    if (searchQuery) {
+      const searchLower = searchQuery.toLowerCase();
+      const titleMatch = job.title?.toLowerCase().includes(searchLower);
+      const companyMatch = job.company?.toLowerCase().includes(searchLower);
+      const skillsMatch = job.skills?.some((skill) => skill.toLowerCase().includes(searchLower));
+
+      if (!titleMatch && !companyMatch && !skillsMatch) {
+        return false;
+      }
+    }
+
+    // Location filtering
+    if (locationQuery && !job.location?.toLowerCase().includes(locationQuery.toLowerCase())) {
       return false;
     }
 
-    // Location filter
-    if (
-      locationQuery &&
-      !job.location.toLowerCase().includes(locationQuery.toLowerCase())
-    ) {
-      return false;
+    // Job Type filtering
+    if (jobTypes.length > 0) {
+      const type = job.jobType || job.type;
+      if (!type || !jobTypes.includes(type)) {
+        return false;
+      }
     }
 
-    // Job type filter
-    if (jobTypes.length > 0 && !jobTypes.includes(job.type)) {
-      return false;
+    // Experience Level filtering
+    if (experienceLevels.length > 0) {
+      const level = job.experienceLevel || job.experience;
+      if (!level || !experienceLevels.includes(level)) {
+        return false;
+      }
     }
 
-    // Experience level filter
-    if (
-      experienceLevels.length > 0 &&
-      !experienceLevels.includes(job.experienceLevel)
-    ) {
-      return false;
-    }
-
-    // Tech stack filter
-    if (
-      techStacks.length > 0 &&
-      !techStacks.some((tech) => job.skills.includes(tech))
-    ) {
-      return false;
-    }
-
-    // Work mode filter
-    if (workModes.length > 0 && !workModes.includes(job.workMode)) {
-      return false;
+    // Work Mode filtering
+    if (workModes.length > 0) {
+      const mode = job.workMode;
+      if (!mode || !workModes.includes(mode)) {
+        return false;
+      }
     }
 
     return true;
   });
 
   const handleApply = (jobId) => {
-    console.log('Apply to job:', jobId);
-    // Navigate to apply page or open modal
+    navigate(`/apply/${jobId}`);
   };
 
   const handleSave = (jobId) => {
@@ -337,9 +201,7 @@ export default function Jobs() {
       {/* Header Section */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">
-            Find Your Dream Job
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-6">Find Your Dream Job</h1>
 
           {/* Search Bar */}
           <div className="flex flex-col md:flex-row gap-3">
@@ -378,19 +240,12 @@ export default function Jobs() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex gap-8">
           {/* Filters Sidebar */}
-          <aside
-            className={`${
-              showFilters ? 'block' : 'hidden'
-            } md:block w-full md:w-80 flex-shrink-0`}
-          >
+          <aside className={`${showFilters ? 'block' : 'hidden'} md:block w-full md:w-80 flex-shrink-0`}>
             <div className="bg-white rounded-lg border border-gray-200 p-6 sticky top-24">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
                 {activeFiltersCount > 0 && (
-                  <button
-                    onClick={clearAllFilters}
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                  >
+                  <button onClick={clearAllFilters} className="text-sm text-blue-600 hover:text-blue-700 font-medium">
                     Clear all
                   </button>
                 )}
@@ -401,45 +256,19 @@ export default function Jobs() {
                   title="Job Type"
                   options={filterOptions.jobTypes}
                   selected={jobTypes}
-                  onChange={(value) =>
-                    toggleFilter(jobTypes, setJobTypes, value)
-                  }
+                  onChange={(value) => toggleFilter(jobTypes, setJobTypes, value)}
                 />
-
                 <FilterSection
                   title="Experience Level"
                   options={filterOptions.experienceLevels}
                   selected={experienceLevels}
-                  onChange={(value) =>
-                    toggleFilter(experienceLevels, setExperienceLevels, value)
-                  }
+                  onChange={(value) => toggleFilter(experienceLevels, setExperienceLevels, value)}
                 />
-
-                <FilterSection
-                  title="Tech Stack"
-                  options={filterOptions.techStacks}
-                  selected={techStacks}
-                  onChange={(value) =>
-                    toggleFilter(techStacks, setTechStacks, value)
-                  }
-                />
-
                 <FilterSection
                   title="Work Mode"
                   options={filterOptions.workModes}
                   selected={workModes}
-                  onChange={(value) =>
-                    toggleFilter(workModes, setWorkModes, value)
-                  }
-                />
-
-                <FilterSection
-                  title="Salary Range"
-                  options={filterOptions.salaryRanges}
-                  selected={salaryRanges}
-                  onChange={(value) =>
-                    toggleFilter(salaryRanges, setSalaryRanges, value)
-                  }
+                  onChange={(value) => toggleFilter(workModes, setWorkModes, value)}
                 />
               </div>
             </div>
@@ -447,51 +276,68 @@ export default function Jobs() {
 
           {/* Jobs List */}
           <main className="flex-1">
-            <div className="mb-6 flex items-center justify-between">
-              <p className="text-gray-600">
-                Showing{' '}
-                <span className="font-semibold text-gray-900">
-                  {filteredJobs.length}
-                </span>{' '}
-                jobs
-              </p>
-              <select className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option>Most Recent</option>
-                <option>Most Relevant</option>
-                <option>Salary: High to Low</option>
-                <option>Salary: Low to High</option>
-              </select>
-            </div>
-
-            <div className="space-y-4">
-              {filteredJobs.length > 0 ? (
-                filteredJobs.map((job) => (
-                  <JobCard
-                    key={job.id}
-                    job={job}
-                    onApply={handleApply}
-                    onSave={handleSave}
-                    isSaved={savedJobs.includes(job.id)}
-                  />
-                ))
-              ) : (
-                <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-                  <Briefcase className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    No jobs found
-                  </h3>
-                  <p className="text-gray-600 mb-4">
-                    Try adjusting your filters or search criteria
-                  </p>
-                  <button
-                    onClick={clearAllFilters}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-                  >
-                    Clear Filters
-                  </button>
+            {/* Loading state */}
+            {loading && (
+              <div className="flex items-center justify-center py-16">
+                <div className="text-center">
+                  <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
+                  <p className="text-gray-500">Loading jobs...</p>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+
+            {/* Error state */}
+            {!loading && error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 mb-6">
+                <p>{error}</p>
+                <button onClick={fetchJobs} className="mt-2 text-sm underline">Try again</button>
+              </div>
+            )}
+
+            {!loading && !error && (
+              <>
+                <div className="mb-6 flex items-center justify-between">
+                  <p className="text-gray-600">
+                    Showing <span className="font-semibold text-gray-900">{filteredJobs.length}</span> of{' '}
+                    <span className="font-semibold text-gray-900">{total}</span> jobs
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  {filteredJobs.length > 0 ? (
+                    filteredJobs.map((job) => (
+                      <JobCard
+                        key={job._id}
+                        job={job}
+                        onApply={handleApply}
+                        onSave={handleSave}
+                        isSaved={savedJobs.includes(job._id)}
+                      />
+                    ))
+                  ) : (
+                    <div className="text-center py-16 bg-white rounded-lg border border-gray-200">
+                      <Briefcase className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        {jobs.length === 0 ? 'No jobs posted yet' : 'No matching jobs found'}
+                      </h3>
+                      <p className="text-gray-600 mb-4">
+                        {jobs.length === 0
+                          ? 'Check back soon — new opportunities are added regularly.'
+                          : 'Try adjusting your filters or search criteria.'}
+                      </p>
+                      {activeFiltersCount > 0 && (
+                        <button
+                          onClick={clearAllFilters}
+                          className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                        >
+                          Clear Filters
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </main>
         </div>
       </div>

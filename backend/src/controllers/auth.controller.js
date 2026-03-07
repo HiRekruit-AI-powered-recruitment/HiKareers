@@ -1,4 +1,4 @@
-import asyncHandler from "../utils/asyncHnadler.utils.js";
+import asyncHandler from "../utils/asyncHandler.utils.js";
 import ApiError from "../utils/ApiError.utils.js";
 import ApiResponse from "../utils/ApiResponse.utils.js";
 import { User } from "../models/users.models.js";
@@ -28,7 +28,7 @@ export const register = asyncHandler(async (req, res) => {
     const newUser = new User({ userName, email, fullName, password });
     const newRefreshToken = await newUser.generateRefreshToken();
     const accessToken = await newUser.generateAccessToken();
-    if(!newRefreshToken || !accessToken)
+    if (!newRefreshToken || !accessToken)
         throw new ApiError(500, "Internal Server Error", "Failed to generate tokens");
     newUser.refreshToken = newRefreshToken;
 
@@ -45,7 +45,7 @@ export const register = asyncHandler(async (req, res) => {
         .cookie("accessToken", accessToken, options)
         .cookie("refreshToken", newRefreshToken, options)
         .json(new ApiResponse(201, "User registered successfully", createdUser)
-    );
+        );
 });
 
 
