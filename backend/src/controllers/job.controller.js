@@ -12,23 +12,52 @@ const sanitizeSalary = (salary) => {
 
 // POST /v1/jobs  — Create a new job (requires auth)
 export const createJob = asyncHandler(async (req, res) => {
-    const { title, company, location, description, endDate, salary, jobType, workMode, experienceLevel, skills } = req.body;
-
-    if (!title || !company || !location || !description || !endDate) {
-        throw new ApiError(400, "title, company, location, description, and endDate are required");
-    }
-
-    const job = await Job.create({
+    const {
         title,
         company,
         location,
         description,
         endDate,
+        salary,
+        jobType,
+        workMode,
+        experienceLevel,
+        skills,
+        jobId,
+        role,
+        numberOfPositions,
+        hiringType,
+        interviewRounds,
+        startDate,
+        driveVisibility
+    } = req.body;
+
+    // Minimum required fields for backward compatibility
+    if (!title || !location || !endDate) {
+        throw new ApiError(400, "title, location, and endDate are required");
+    }
+
+    const job = await Job.create({
+        title,
+        company: company || "Unknown Company", // Fallback for old API calls if company missing
+        location,
+        description: description || "", // Fallback
+        endDate: new Date(endDate),
         salary: sanitizeSalary(salary) || null,
         jobType: jobType || null,
         workMode: workMode || null,
         experienceLevel: experienceLevel || null,
-        skills: skills || [],
+        skills: Array.isArray(skills) ? skills : [],
+
+        // New fields
+        jobId: jobId || undefined,
+        role: role || undefined,
+        numberOfPositions: numberOfPositions || 1,
+        hiringType: hiringType || "Fresher",
+        interviewRounds: Array.isArray(interviewRounds) ? interviewRounds : [],
+        startDate: startDate ? new Date(startDate) : undefined,
+        driveVisibility: driveVisibility || "public",
+
         createdBy: req.user._id,
         status: 'ACTIVE'
     });

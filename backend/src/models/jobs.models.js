@@ -41,6 +41,41 @@ const jobSchema = new mongoose.Schema({
         type: [String],
         default: []
     },
+    jobId: {
+        type: String
+    },
+    role: {
+        type: String
+    },
+    numberOfPositions: {
+        type: Number,
+        default: 1
+    },
+    hiringType: {
+        type: String,
+        enum: ["Fresher", "Experienced"],
+        default: "Fresher"
+    },
+    startDate: {
+        type: Date
+    },
+    driveVisibility: {
+        type: String,
+        enum: ["public", "private"],
+        default: "public"
+    },
+    interviewRounds: [
+        {
+            type: {
+                type: String,
+                default: ""
+            },
+            description: {
+                type: String,
+                default: ""
+            }
+        }
+    ],
     endDate: {
         type: Date,
         required: true
