@@ -13,6 +13,7 @@ import Home from './features/home/Home';
 import Apply from './features/applications/Apply';
 import Applications from './features/applications/Applications';
 import Jobs from './features/jobs/Jobs';
+import JobDetails from './features/jobs/JobDetails';
 import ChatBot from './features/chatbot/ChatBot';
 
 import AdminDashboard from './features/admin/AdminDashboard';
@@ -122,8 +123,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/admin/jobs/:jobId/edit"
+            <Route path="/admin/jobs/:jobId/edit"
               element={
                 <ProtectedRoute roles={['admin']}>
                   <EditJob />
@@ -132,6 +132,7 @@ function App() {
             />
 
             <Route path="/jobs" element={<Jobs />} />
+            <Route path="/jobs/:jobId" element={<JobDetails />} />
           </Routes>
         </main>
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Briefcase,
   MapPin,
@@ -11,6 +12,7 @@ import {
 
 // JobCard Component — works with both MongoDB _id and mock id fields
 const JobCard = ({ job, onApply, onSave, isSaved }) => {
+  const navigate = useNavigate();
   const [saved, setSaved] = useState(isSaved);
   const jobId = job._id || job.id;
 
@@ -27,7 +29,10 @@ const JobCard = ({ job, onApply, onSave, isSaved }) => {
             <Building2 className="w-7 h-7 text-blue-600" />
           </div>
           <div className="flex-1">
-            <h3 className="text-xl font-semibold text-gray-900 mb-1 hover:text-blue-600 cursor-pointer">
+            <h3
+              onClick={() => navigate(`/jobs/${jobId}`)}
+              className="text-xl font-semibold text-gray-900 mb-1 hover:text-blue-600 cursor-pointer transition-colors"
+            >
               {job.title}
             </h3>
             <p className="text-gray-600 font-medium mb-2">{job.company}</p>
