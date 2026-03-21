@@ -22,6 +22,9 @@ import AdminApplications from './features/admin/AdminApplications';
 import PostJob from './features/admin/PostJob';
 import EditJob from './features/admin/EditJob';
 import RecruiterJobs from './features/admin/RecruiterJobs';
+import About from './FooterPages/About';
+import Contact from './FooterPages/Contact';
+import HelpCenter from './FooterPages/HelpCenter';
 
 function App() {
   const location = useLocation();
@@ -123,7 +126,8 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="/admin/jobs/:jobId/edit"
+            <Route
+              path="/admin/jobs/:jobId/edit"
               element={
                 <ProtectedRoute roles={['admin']}>
                   <EditJob />
@@ -133,6 +137,9 @@ function App() {
 
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/jobs/:jobId" element={<JobDetails />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/help" element={<HelpCenter />} />
           </Routes>
         </main>
 
