@@ -25,6 +25,9 @@ import RecruiterJobs from './features/admin/RecruiterJobs';
 import About from './FooterPages/About';
 import Contact from './FooterPages/Contact';
 import HelpCenter from './FooterPages/HelpCenter';
+import PrivacyPolicy from './FooterPages/PrivacyPolicy';
+import TermsofService from './FooterPages/TermsofService';
+import CookiePolicy from './FooterPages/CookiePolicy';
 
 function App() {
   const location = useLocation();
@@ -140,6 +143,9 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/help" element={<HelpCenter />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsofService />} />
+            <Route path="/cookies" element={<CookiePolicy />} />
           </Routes>
         </main>
 
