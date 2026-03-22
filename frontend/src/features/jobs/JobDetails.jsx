@@ -15,14 +15,18 @@ import {
     CheckCircle2,
 } from 'lucide-react';
 import { jobAPI } from '../applications/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 const JobDetails = () => {
     const { jobId } = useParams();
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [job, setJob] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [copied, setCopied] = useState(false);
+
+    const isAdmin = user?.userType === 'admin';
 
     useEffect(() => {
         const fetchJob = async () => {
@@ -188,22 +192,36 @@ const JobDetails = () => {
                             >
                                 Apply Now
                             </button>
-                            <button
-                                onClick={handleShare}
-                                className="w-full py-3.5 bg-white text-blue-600 border-2 border-blue-600 rounded-xl font-bold text-lg hover:bg-blue-50 transition-all flex items-center justify-center gap-2"
-                            >
-                                {copied ? (
-                                    <>
-                                        <CheckCircle2 className="w-5 h-5" />
-                                        Link Copied!
-                                    </>
-                                ) : (
-                                    <>
-                                        <Share2 className="w-5 h-5" />
-                                        Share Apply Link
-                                    </>
-                                )}
-                            </button>
+                            {(() => {
+                                const visibility = job?.driveVisibility || 'public';
+                                const isPrivate = visibility === 'private';
+                                const shareDisabled = isPrivate && !isAdmin;
+                                return (
+                                    <div>
+                                        <button
+                                            onClick={!shareDisabled ? handleShare : undefined}
+                                            disabled={shareDisabled}
+                                            title={shareDisabled ? 'Private job link cannot be shared' : undefined}
+                                            className={`w-full py-3.5 border-2 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2 ${
+                                                shareDisabled
+                                                    ? 'bg-gray-50 text-gray-400 border-gray-200 opacity-60 cursor-not-allowed'
+                                                    : 'bg-white text-blue-600 border-blue-600 hover:bg-blue-50'
+                                            }`}
+                                        >
+                                            {copied ? (
+                                                <><CheckCircle2 className="w-5 h-5" /> Link Copied!</>
+                                            ) : (
+                                                <><Share2 className="w-5 h-5" /> Share Apply Link</>
+                                            )}
+                                        </button>
+                                        {shareDisabled && (
+                                            <p className="text-xs text-center text-gray-400 mt-1.5">
+                                                Private job link cannot be shared
+                                            </p>
+                                        )}
+                                    </div>
+                                );
+                            })()}
                         </div>
 
                         <div className="space-y-4 py-6 border-t border-gray-100">
