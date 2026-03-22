@@ -62,9 +62,13 @@ export const createJob = asyncHandler(async (req, res) => {
         status: 'ACTIVE'
     });
 
+    const frontendUrl =
+        process.env.FRONTEND_URL || "http://localhost:5173";
+    const applyLink = `${frontendUrl}/apply/${job._id}`;
+
     return res
         .status(201)
-        .json(new ApiResponse(201, "Job created successfully", job));
+        .json(new ApiResponse(201, "Job created successfully", { job, applyLink }));
 });
 
 // GET /v1/jobs  — Get all jobs with filtering (supports search, location, jobType, workMode, experienceLevel, createdBy, status)
