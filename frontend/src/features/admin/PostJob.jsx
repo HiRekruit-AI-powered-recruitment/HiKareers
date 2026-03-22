@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { Copy, CheckCircle, X } from 'lucide-react';
 import {
     ChevronLeft,
     Briefcase,
@@ -23,6 +24,9 @@ export default function PostJob() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [applyLink, setApplyLink] = useState('');
+    const [showModal, setShowModal] = useState(false);
+    const [linkCopied, setLinkCopied] = useState(false);
     const [formData, setFormData] = useState({
         title: '',
         company: '',
@@ -88,7 +92,12 @@ export default function PostJob() {
 
             const response = await adminAPI.createJob(jobData);
             if (response.success) {
-                navigate('/admin-dashboard');
+                // Use applyLink from backend, with a safe frontend fallback
+                const link =
+                    response.data?.applyLink ||
+                    `${window.location.origin}/apply/${response.data?.job?._id}`;
+                setApplyLink(link);
+                setShowModal(true);
             } else {
                 // If there are specific validation errors, join them
                 const detailError = response.error && Array.isArray(response.error)
@@ -107,7 +116,67 @@ export default function PostJob() {
         }
     };
 
+    const handleCopyLink = () => {
+        navigator.clipboard.writeText(applyLink);
+        setLinkCopied(true);
+        setTimeout(() => setLinkCopied(false), 2000);
+    };
+
+    const handleGoToDashboard = () => {
+        setShowModal(false);
+        navigate('/admin-dashboard');
+    };
+
     return (
+        <>
+        {/* Apply Link Modal */}
+        {showModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 relative animate-in fade-in zoom-in-95 duration-200">
+                    <button
+                        onClick={handleGoToDashboard}
+                        className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+                        aria-label="Close"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+
+                    <div className="flex flex-col items-center text-center gap-4">
+                        <div className="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center">
+                            <CheckCircle className="w-8 h-8 text-green-500" />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-900">Job Posted Successfully!</h2>
+                            <p className="text-sm text-gray-500 mt-1">Share this link with candidates to apply.</p>
+                        </div>
+
+                        <div className="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-left">
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Apply Link</p>
+                            <p className="text-sm text-blue-600 break-all font-mono select-all">{applyLink}</p>
+                        </div>
+
+                        <button
+                            onClick={handleCopyLink}
+                            className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all"
+                        >
+                            {linkCopied ? (
+                                <><CheckCircle className="w-5 h-5" /> Link Copied!</>
+                            ) : (
+                                <><Copy className="w-5 h-5" /> Copy Link</>
+                            )}
+                        </button>
+
+                        <button
+                            onClick={handleGoToDashboard}
+                            className="w-full py-3 border border-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition-colors"
+                        >
+                            Go to Dashboard
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {/* Back Link */}
             <Link
@@ -500,5 +569,6 @@ export default function PostJob() {
                 </form>
             </div>
         </div>
+        </>
     );
 }

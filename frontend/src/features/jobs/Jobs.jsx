@@ -13,6 +13,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { jobAPI } from '../applications/api';
 import JobCard from './JobCard';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Filter Section Component
 function FilterSection({ title, options, selected, onChange }) {
@@ -54,6 +55,7 @@ function FilterSection({ title, options, selected, onChange }) {
 // Main Jobs Component
 export default function Jobs() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [locationQuery, setLocationQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -140,6 +142,13 @@ export default function Jobs() {
 
   // Client-side filtering
   const filteredJobs = jobs.filter((job) => {
+    // Private job visibility: hide private jobs from non-admins
+    // Use fallback 'public' for old jobs that may not have driveVisibility set
+    const visibility = job.driveVisibility || 'public';
+    if (visibility === 'private' && user?.userType !== 'admin') {
+      return false;
+    }
+
     // Search query filtering
     if (searchQuery) {
       const searchLower = searchQuery.toLowerCase();
