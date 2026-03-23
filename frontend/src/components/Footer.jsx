@@ -35,7 +35,8 @@ export function Footer() {
             </p>
             <div className="flex gap-3">
               <a
-                href="#"
+                href="https://x.com/hirekruit"
+                target="_blank"
                 className="w-9 h-9 bg-gray-800 hover:bg-blue-600 rounded-lg flex items-center justify-center transition-colors"
                 aria-label="Twitter"
               >
@@ -49,6 +50,7 @@ export function Footer() {
               </a>
               <a
                 href="https://in.linkedin.com/company/hirekruit"
+                target="_blank"
                 className="w-9 h-9 bg-gray-800 hover:bg-blue-600 rounded-lg flex items-center justify-center transition-colors"
                 aria-label="LinkedIn"
               >
@@ -61,7 +63,8 @@ export function Footer() {
                 </svg>
               </a>
               <a
-                href="#"
+                href="https://www.instagram.com/hirekruit"
+                target="_blank"
                 className="w-9 h-9 bg-gray-800 hover:bg-blue-600 rounded-lg flex items-center justify-center transition-colors"
                 aria-label="Instagram"
               >
@@ -123,14 +126,6 @@ export function Footer() {
                   className="hover:text-white transition-colors"
                 >
                   Recruiting Tools
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/success-stories"
-                  className="hover:text-white transition-colors"
-                >
-                  Success Stories
                 </a>
               </li>
             </ul>
