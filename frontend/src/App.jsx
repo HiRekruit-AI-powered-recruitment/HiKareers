@@ -28,20 +28,14 @@ import HelpCenter from './FooterPages/HelpCenter';
 import PrivacyPolicy from './FooterPages/PrivacyPolicy';
 import TermsofService from './FooterPages/TermsofService';
 import CookiePolicy from './FooterPages/CookiePolicy';
+import MockInterview from './features/mockInterview/MockInterview';
 
 function App() {
-  const location = useLocation();
-  const showHeader =
-    location.pathname !== '/login' && location.pathname !== '/signup';
-  const showFooter =
-    location.pathname !== '/login' && location.pathname !== '/signup';
-
   return (
     <AuthProvider>
       <ChatBot />
       <div className="min-h-screen bg-gray-50 flex flex-col">
-        {showHeader && <Header />}
-
+        <Header />
         <main className="flex-1">
           <Routes>
             <Route path="/login" element={<Login />} />
@@ -137,7 +131,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-
+            <Route path="/interview" element={<MockInterview />} />
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/jobs/:jobId" element={<JobDetails />} />
             <Route path="/about" element={<About />} />
@@ -148,8 +142,7 @@ function App() {
             <Route path="/cookies" element={<CookiePolicy />} />
           </Routes>
         </main>
-
-        {showFooter && <Footer />}
+        <Footer />
       </div>
     </AuthProvider>
   );

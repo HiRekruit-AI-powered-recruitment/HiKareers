@@ -51,57 +51,6 @@ function StatCard({ value, label }) {
   );
 }
 
-// CTA Section Component
-function CTASection({ isLoggedIn }) {
-  const navigate = useNavigate();
-  return (
-    <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl p-8 md:p-12 text-white">
-      <div className="max-w-3xl mx-auto text-center">
-        <h2 className="text-3xl md:text-4xl font-bold mb-4">
-          Ready to Accelerate Your Career?
-        </h2>
-        <p className="text-blue-100 text-lg mb-8">
-          Join thousands of professionals who found their dream job through
-          HiKareers
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          {!isLoggedIn ? (
-            <>
-              <button
-                onClick={() => navigate('/signup')}
-                className="px-8 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
-              >
-                Create Free Account
-              </button>
-              <button
-                onClick={() => navigate('/jobs')}
-                className="px-8 py-3 bg-blue-700 text-white rounded-lg font-semibold hover:bg-blue-800 transition-colors border border-blue-500"
-              >
-                Browse Jobs
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={() => navigate('/interview')}
-                className="px-8 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
-              >
-                Start Mock Interview
-              </button>
-              <button
-                onClick={() => navigate('/jobs')}
-                className="px-8 py-3 bg-blue-700 text-white rounded-lg font-semibold hover:bg-blue-800 transition-colors border border-blue-500"
-              >
-                View Matched Jobs
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // Profile Completion Banner (placeholder)
 function ProfileCompletionBanner() {
   return (
@@ -150,7 +99,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-gray-900 to-blue-900 text-white">
+      <div className="bg-gradient-to-br from-gray-900 to-blue-900 text-white h-screen flex justify-center items-center">
         <div className="max-w-6xl mx-auto px-4 py-16 md:py-24">
           {showCompletionBanner && !loading && (
             <div className="mb-8">
@@ -168,7 +117,7 @@ export default function Home() {
 
             <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
               Find Your Dream Job with{' '}
-              <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent ">
                 AI Intelligence
               </span>
             </h1>
@@ -181,8 +130,11 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               {!isLoggedIn ? (
                 <>
-                  <button className="px-8 py-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/30">
-                    Get Started Free
+                  <button
+                    className="px-8 py-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/30"
+                    onClick={() => navigate('/login')}
+                  >
+                    Get Started
                   </button>
                   <button
                     onClick={handleExploreJobs}
@@ -207,13 +159,6 @@ export default function Home() {
                   </button>
                 </>
               )}
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto pt-8 border-t border-white/10">
-              <StatCard value="10K+" label="Active Jobs" />
-              <StatCard value="5K+" label="Companies" />
-              <StatCard value="95%" label="Success Rate" />
             </div>
           </div>
         </div>
@@ -425,9 +370,7 @@ export default function Home() {
       </div>
 
       {/* CTA Section */}
-      <div className="max-w-6xl mx-auto px-4 py-16">
-        <CTASection isLoggedIn={isLoggedIn} />
-      </div>
+      <div className="max-w-6xl mx-auto px-4 py-16"></div>
     </div>
   );
 }
