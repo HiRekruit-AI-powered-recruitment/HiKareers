@@ -10,6 +10,11 @@ import {
   CheckCircle,
 } from 'lucide-react';
 
+import ProfileCompletionBanner from '../profile/components/ProfileCompletionBanner.jsx';
+import { ProfileCompletionProvider } from '../../contexts/ProfileCompletionContext.jsx';
+import { Navigate, Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext.jsx';
+
 // Mock authentication functions for demo
 const isAuthenticated = () => false;
 const getCurrentUser = () => null;
@@ -51,37 +56,6 @@ function StatCard({ value, label }) {
   );
 }
 
-// Profile Completion Banner (placeholder)
-function ProfileCompletionBanner() {
-  return (
-    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-      <div className="flex items-start gap-3">
-        <div className="flex-shrink-0">
-          <Target className="w-5 h-5 text-amber-600" />
-        </div>
-        <div className="flex-1">
-          <h4 className="font-semibold text-amber-900 mb-1">
-            Complete Your Profile
-          </h4>
-          <p className="text-sm text-amber-700 mb-3">
-            Complete your profile to get better job matches and increase your
-            chances by 70%
-          </p>
-          <Link
-            to="/profile"
-            className="text-sm font-medium text-amber-700 hover:text-amber-800 underline"
-          >
-            Complete Now →
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-import { Navigate, Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext.jsx';
-
 export default function Home() {
   const navigate = useNavigate();
   const { user, isAuthenticated: isLoggedIn, isLoading } = useAuth();
@@ -93,20 +67,18 @@ export default function Home() {
     return <Navigate to="/admin-dashboard" replace />;
   }
 
-  // Simplified loadUserData just for banner visibility logic
-  const showCompletionBanner = isLoggedIn && user && !user.profileCompleted;
+  const resumes = user?.resumes?.['1'] ? [user.resumes['1']] : [];
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-gray-900 to-blue-900 text-white h-screen flex justify-center items-center">
-        <div className="max-w-6xl mx-auto px-4 py-16 md:py-24">
-          {showCompletionBanner && !loading && (
-            <div className="mb-8">
-              <ProfileCompletionBanner />
-            </div>
-          )}
-
+      {isLoggedIn && user && (
+        <ProfileCompletionProvider user={user} resumes={resumes}>
+          <ProfileCompletionBanner />
+        </ProfileCompletionProvider>
+      )}
+      <div className="relative bg-gradient-to-br from-gray-900 to-blue-900 text-white h-screen flex justify-center items-center">
+        <div className="max-w-6xl mx-auto px-4 py-16 md:py-16">
           <div className="text-center max-w-3xl mx-auto">
             <div className="inline-flex items-center gap-2 bg-blue-800/30 rounded-full px-4 py-2 mb-6 border border-blue-700/30">
               <Sparkles className="w-4 h-4 text-yellow-400" />

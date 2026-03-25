@@ -517,30 +517,9 @@ function BasicInfoSection({
             value={form.mobile}
             onChange={onFormChange}
             maxLength={10}
-            disabled={user?.mobileVerified}
             placeholder="9999999999"
             className="input"
           />
-          {user?.mobileVerified && (
-            <p className="text-xs text-emerald-600 mt-2">
-              Mobile verified and locked
-            </p>
-          )}
-        </div>
-
-        <div className="flex items-end">
-          {user?.mobileVerified ? (
-            <span className="badge badge-success">✓ Verified</span>
-          ) : (
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm"
-              disabled={!form.mobile || form.mobile.length !== 10}
-              onClick={onShowMobile}
-            >
-              Verify
-            </button>
-          )}
         </div>
       </div>
     </div>

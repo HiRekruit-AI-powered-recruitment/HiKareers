@@ -2,7 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { userAPI } from './api';
 import { adminAPI } from '../admin/api';
-import { Briefcase, Users, CheckCircle, Clock, ChevronRight } from 'lucide-react';
+import {
+  Briefcase,
+  Users,
+  CheckCircle,
+  Clock,
+  ChevronRight,
+} from 'lucide-react';
 
 /* ----------------------- Helpers ----------------------- */
 
@@ -20,7 +26,6 @@ function normalizeResumes(resumes) {
   return result;
 }
 
-
 function formatDate(date) {
   if (!date) return '-';
   const d = new Date(date);
@@ -34,14 +39,19 @@ function formatDate(date) {
 
 /* ----------------------- Sections ----------------------- */
 
-function HeaderSection({ onEdit, title = "My Profile" }) {
+function HeaderSection({ onEdit, title = 'My Profile' }) {
   return (
     <div className="card flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <div>
         <h1 className="text-3xl mb-2">{title}</h1>
-        <p className="text-neutral-600">Manage and view your profile information</p>
+        <p className="text-neutral-600">
+          Manage and view your profile information
+        </p>
       </div>
-      <button onClick={onEdit} className="btn btn-primary btn-lg w-full md:w-auto">
+      <button
+        onClick={onEdit}
+        className="btn btn-primary btn-lg w-full md:w-auto"
+      >
         Edit Profile
       </button>
     </div>
@@ -81,12 +91,6 @@ function BasicInfoSection({ user }) {
             <p className="text-neutral-900 font-medium">
               {user?.mobile || 'Not provided'}
             </p>
-            {user?.mobile &&
-              (user?.mobileVerified ? (
-                <span className="badge badge-success text-xs">✓ Verified</span>
-              ) : (
-                <span className="badge badge-warning text-xs">Pending</span>
-              ))}
           </div>
         </div>
       </div>
@@ -106,7 +110,7 @@ function Info({ label, value }) {
 }
 
 function ResumesSection({ resumes }) {
-  const hasAnyResume = Array.isArray(resumes) && resumes.some(r => r);
+  const hasAnyResume = Array.isArray(resumes) && resumes.some((r) => r);
 
   return (
     <div className="card">
@@ -157,19 +161,17 @@ function ResumesSection({ resumes }) {
   );
 }
 
-
 function EducationSection({ user }) {
   if (!user?.highestQualification || !user?.qualifications) return null;
 
   const qualificationLevels = {
-    'tenth': ['tenth'],
-    'twelfth': ['tenth', 'twelfth'],
-    'graduation': ['tenth', 'twelfth', 'graduation'],
-    'postgraduation': ['tenth', 'twelfth', 'graduation', 'postgraduation'],
+    tenth: ['tenth'],
+    twelfth: ['tenth', 'twelfth'],
+    graduation: ['tenth', 'twelfth', 'graduation'],
+    postgraduation: ['tenth', 'twelfth', 'graduation', 'postgraduation'],
   };
 
-  const levelsToShow =
-    qualificationLevels[user.highestQualification] || [];
+  const levelsToShow = qualificationLevels[user.highestQualification] || [];
 
   const renderBlock = (title, data) => {
     if (!data || typeof data !== 'object') return null;
@@ -196,9 +198,7 @@ function EducationSection({ user }) {
                     Missing
                   </p>
                 ) : (
-                  <p className="text-neutral-900 mt-1">
-                    {String(value)}
-                  </p>
+                  <p className="text-neutral-900 mt-1">{String(value)}</p>
                 )}
               </div>
             );
@@ -244,18 +244,43 @@ function EducationSection({ user }) {
 
 function RecruiterStatsSection({ stats }) {
   const cards = [
-    { label: 'Jobs Posted', value: stats?.totalJobs || 0, icon: Briefcase, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Active Jobs', value: stats?.activeJobs || 0, icon: CheckCircle, color: 'text-green-600', bg: 'bg-green-50' },
-    { label: 'Applications', value: stats?.totalApplications || 0, icon: Users, color: 'text-purple-600', bg: 'bg-purple-50' },
+    {
+      label: 'Jobs Posted',
+      value: stats?.totalJobs || 0,
+      icon: Briefcase,
+      color: 'text-blue-600',
+      bg: 'bg-blue-50',
+    },
+    {
+      label: 'Active Jobs',
+      value: stats?.activeJobs || 0,
+      icon: CheckCircle,
+      color: 'text-green-600',
+      bg: 'bg-green-50',
+    },
+    {
+      label: 'Applications',
+      value: stats?.totalApplications || 0,
+      icon: Users,
+      color: 'text-purple-600',
+      bg: 'bg-purple-50',
+    },
   ];
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {cards.map((card) => (
-        <div key={card.label} className="card p-6 flex items-center justify-between">
+        <div
+          key={card.label}
+          className="card p-6 flex items-center justify-between"
+        >
           <div>
-            <p className="text-sm font-medium text-neutral-500 uppercase tracking-wider">{card.label}</p>
-            <p className="text-3xl font-bold text-neutral-900 mt-1">{card.value}</p>
+            <p className="text-sm font-medium text-neutral-500 uppercase tracking-wider">
+              {card.label}
+            </p>
+            <p className="text-3xl font-bold text-neutral-900 mt-1">
+              {card.value}
+            </p>
           </div>
           <div className={`p-3 rounded-xl ${card.bg}`}>
             <card.icon className={`w-6 h-6 ${card.color}`} />
@@ -286,8 +311,14 @@ function RecentActivitySection({ jobs }) {
                 {job.title}
               </p>
               <div className="flex items-center gap-3 mt-1 text-xs text-neutral-500">
-                <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {job.applicationCount || 0} applicants</span>
-                <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> Posted on {formatDate(job.createdAt)}</span>
+                <span className="flex items-center gap-1">
+                  <Users className="w-3 h-3" /> {job.applicationCount || 0}{' '}
+                  applicants
+                </span>
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3 h-3" /> Posted on{' '}
+                  {formatDate(job.createdAt)}
+                </span>
               </div>
             </div>
             <ChevronRight className="w-5 h-5 text-neutral-400 group-hover:text-blue-500 transition-colors" />
@@ -305,7 +336,6 @@ function RecentActivitySection({ jobs }) {
     </div>
   );
 }
-
 
 /* ----------------------- Main Container ----------------------- */
 
@@ -329,7 +359,7 @@ export default function ProfilePage() {
         if (userRes.data.userType === 'admin') {
           const [statsRes, jobsRes] = await Promise.all([
             adminAPI.getAdminStats(),
-            adminAPI.getAdminJobsAll(userRes.data._id)
+            adminAPI.getAdminJobsAll(userRes.data._id),
           ]);
 
           if (statsRes.success) setStats(statsRes.data);
@@ -372,7 +402,7 @@ export default function ProfilePage() {
     <div className="max-w-4xl mx-auto space-y-6 pb-12 px-4">
       <HeaderSection
         onEdit={() => navigate('/profile/edit')}
-        title={isAdmin ? "My Recruiter Profile" : "My Profile"}
+        title={isAdmin ? 'My Recruiter Profile' : 'My Profile'}
       />
 
       <BasicInfoSection user={user} />
