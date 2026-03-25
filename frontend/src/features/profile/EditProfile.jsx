@@ -1,13 +1,27 @@
-import React, { useEffect, useState } from "react";
-import { userAPI } from "./api";
-import EmailVerificationDialog from "./components/EmailVerificationDialog.jsx";
-import MobileVerificationDialog from "./components/MobileVerificationDialog.jsx";
+import React, { useEffect, useState } from 'react';
+import { userAPI } from './api';
+import EmailVerificationDialog from './components/EmailVerificationDialog.jsx';
+import MobileVerificationDialog from './components/MobileVerificationDialog.jsx';
 
 const EMPTY_QUALIFICATIONS = {
-  tenth: { startYear: "", endYear: "", percentage: ""},
-  twelfth: { startYear: "", endYear: "", percentage: ""},
-  graduation: { courseName: "", startYear: "", endYear: "", cgpa: "", degree: "", specialization: ""},
-  postgraduation: { courseName: "", startYear: "", endYear: "", cgpa: "", degree: "",  specialization: ""},
+  tenth: { startYear: '', endYear: '', percentage: '' },
+  twelfth: { startYear: '', endYear: '', percentage: '' },
+  graduation: {
+    courseName: '',
+    startYear: '',
+    endYear: '',
+    cgpa: '',
+    degree: '',
+    specialization: '',
+  },
+  postgraduation: {
+    courseName: '',
+    startYear: '',
+    endYear: '',
+    cgpa: '',
+    degree: '',
+    specialization: '',
+  },
 };
 
 function normalizeQualifications(value = {}) {
@@ -20,23 +34,34 @@ function normalizeQualifications(value = {}) {
     tenth: { ...EMPTY_QUALIFICATIONS.tenth, ...tenthRest },
     twelfth: { ...EMPTY_QUALIFICATIONS.twelfth, ...twelfthRest },
     graduation: { ...EMPTY_QUALIFICATIONS.graduation, ...graduationRest },
-    postgraduation: { ...EMPTY_QUALIFICATIONS.postgraduation, ...postgraduationRest },
+    postgraduation: {
+      ...EMPTY_QUALIFICATIONS.postgraduation,
+      ...postgraduationRest,
+    },
   };
 }
 
-function buildPayload({ form, highestQualification, qualifications, original }) {
+function buildPayload({
+  form,
+  highestQualification,
+  qualifications,
+  original,
+}) {
   const payload = {};
 
   if (form.fullName !== original.fullName) payload.fullName = form.fullName;
 
-  const nextMobile = form.mobile?.replace(/\D/g, "");
-  const prevMobile = original.mobile?.replace(/\D/g, "");
+  const nextMobile = form.mobile?.replace(/\D/g, '');
+  const prevMobile = original.mobile?.replace(/\D/g, '');
   if (nextMobile && nextMobile !== prevMobile) payload.mobile = nextMobile;
 
   if (highestQualification !== original.highestQualification)
     payload.highestQualification = highestQualification;
 
-  if (JSON.stringify(qualifications) !== JSON.stringify(normalizeQualifications(original.qualifications)))
+  if (
+    JSON.stringify(qualifications) !==
+    JSON.stringify(normalizeQualifications(original.qualifications))
+  )
     payload.qualifications = qualifications;
 
   return payload;
@@ -50,8 +75,8 @@ export default function EditProfile() {
   const [originalUser, setOriginalUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const [form, setForm] = useState({ fullName: "", mobile: "" });
-  const [highestQualification, setHighestQualification] = useState("");
+  const [form, setForm] = useState({ fullName: '', mobile: '' });
+  const [highestQualification, setHighestQualification] = useState('');
   const [qualifications, setQualifications] = useState(EMPTY_QUALIFICATIONS);
 
   const [resumeFiles, setResumeFiles] = useState([null, null, null]);
@@ -59,8 +84,8 @@ export default function EditProfile() {
 
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [showMobileDialog, setShowMobileDialog] = useState(false);
@@ -76,8 +101,8 @@ export default function EditProfile() {
         const u = res.data;
         setUser(u);
         setOriginalUser(u);
-        setForm({ fullName: u.fullName || "", mobile: u.mobile || "" });
-        setHighestQualification(u.highestQualification || "");
+        setForm({ fullName: u.fullName || '', mobile: u.mobile || '' });
+        setHighestQualification(u.highestQualification || '');
         setQualifications(normalizeQualifications(u.qualifications));
 
         const slots = [null, null, null];
@@ -85,14 +110,14 @@ export default function EditProfile() {
         Object.keys(resumes).forEach((key) => {
           const idx = parseInt(key, 10) - 1;
           if (idx >= 0 && idx < 3) {
-          slots[idx] = { ...resumes[key], slot: idx + 1 };
-        }
-      });
+            slots[idx] = { ...resumes[key], slot: idx + 1 };
+          }
+        });
 
-      setUploadedResumes(slots);
+        setUploadedResumes(slots);
       }
     } catch (e) {
-      setError("Failed to load profile");
+      setError('Failed to load profile');
     } finally {
       setLoading(false);
     }
@@ -100,10 +125,10 @@ export default function EditProfile() {
 
   function onFormChange(e) {
     const { name, value } = e.target;
-    if (name === "mobile" && user?.mobileVerified) return;
+    if (name === 'mobile' && user?.mobileVerified) return;
     setForm((f) => ({
       ...f,
-      [name]: value
+      [name]: value,
     }));
   }
 
@@ -112,67 +137,66 @@ export default function EditProfile() {
       ...q,
       [level]: {
         ...q[level],
-        [field]: value
-      }
+        [field]: value,
+      },
     }));
   }
 
   async function saveProfile(e) {
-  e?.preventDefault();
-  setSaving(true);
-  setError("");
-  setSuccess("");
+    e?.preventDefault();
+    setSaving(true);
+    setError('');
+    setSuccess('');
 
-  // Mobile validation
-  if (form.mobile && form.mobile.length !== 10) {
-    setError("Mobile must be 10 digits");
-    setSaving(false);
-    return;
-  }
-
-  // Education validation
-  const LEVELS = ["tenth", "twelfth", "graduation", "postgraduation"];
-  const endIndex = LEVELS.indexOf(highestQualification);
-  const visibleLevels = endIndex >= 0 ? LEVELS.slice(0, endIndex + 1) : [];
-
-  for (const level of visibleLevels) {
-    const fields = Object.keys(qualifications[level]);
-    for (const field of fields) {
-      const value = qualifications[level][field];
-      if (value === null || value === undefined || value === "") {
-        setError(`Please fill all fields for ${level} (${field})`);
-        setSaving(false);
-        return;
-      }
-    }
-  }
-
-  try {
-    const payload = buildPayload({
-      form,
-      highestQualification,
-      qualifications,
-      original: originalUser
-    });
-
-    if (!Object.keys(payload).length) {
-      setSuccess("No changes to apply");
+    // Mobile validation
+    if (form.mobile && form.mobile.length !== 10) {
+      setError('Mobile must be 10 digits');
       setSaving(false);
       return;
     }
 
-    const res = await userAPI.updateProfile(payload);
-    if (res.success) {
-      setSuccess("Profile updated successfully!");
-      await loadProfile();
-    } else setError(res.message || "Update failed");
-  } catch (e) {
-    setError(e.response?.data?.message || "Update failed");
-  } finally {
-    setSaving(false);
-  }
-}
+    // Education validation
+    const LEVELS = ['tenth', 'twelfth', 'graduation', 'postgraduation'];
+    const endIndex = LEVELS.indexOf(highestQualification);
+    const visibleLevels = endIndex >= 0 ? LEVELS.slice(0, endIndex + 1) : [];
 
+    for (const level of visibleLevels) {
+      const fields = Object.keys(qualifications[level]);
+      for (const field of fields) {
+        const value = qualifications[level][field];
+        if (value === null || value === undefined || value === '') {
+          setError(`Please fill all fields for ${level} (${field})`);
+          setSaving(false);
+          return;
+        }
+      }
+    }
+
+    try {
+      const payload = buildPayload({
+        form,
+        highestQualification,
+        qualifications,
+        original: originalUser,
+      });
+
+      if (!Object.keys(payload).length) {
+        setSuccess('No changes to apply');
+        setSaving(false);
+        return;
+      }
+
+      const res = await userAPI.updateProfile(payload);
+      if (res.success) {
+        setSuccess('Profile updated successfully!');
+        await loadProfile();
+      } else setError(res.message || 'Update failed');
+    } catch (e) {
+      setError(e.response?.data?.message || 'Update failed');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   function onResumeChange(i, file) {
     const arr = [...resumeFiles];
@@ -181,25 +205,25 @@ export default function EditProfile() {
   }
 
   async function uploadResume(i) {
-    if (!resumeFiles[i]) return setError("No file selected");
+    if (!resumeFiles[i]) return setError('No file selected');
     setUploading(true);
-    setError("");
-    setSuccess("");
+    setError('');
+    setSuccess('');
 
     try {
       const fd = new FormData();
-      fd.append("resume", resumeFiles[i]);
-      fd.append("sequence", i + 1);
+      fd.append('resume', resumeFiles[i]);
+      fd.append('sequence', i + 1);
       const res = await userAPI.uploadResume(fd);
       if (res.success) {
-        setSuccess(res.message || "Resume uploaded");
+        setSuccess(res.message || 'Resume uploaded');
         await loadProfile();
         const arr = [...resumeFiles];
         arr[i] = null;
         setResumeFiles(arr);
-      } else setError(res.message || "Upload failed");
+      } else setError(res.message || 'Upload failed');
     } catch (e) {
-      setError(e.response?.data?.message || "Upload failed");
+      setError(e.response?.data?.message || 'Upload failed');
     } finally {
       setUploading(false);
     }
@@ -262,13 +286,12 @@ export default function EditProfile() {
           disabled={saving}
           className="btn btn-primary btn-lg w-full"
         >
-          {saving ? "Saving..." : "Save Profile"}
+          {saving ? 'Saving...' : 'Save Profile'}
         </button>
       </div>
     </div>
   );
 }
-
 
 function EducationSection({
   highestQualification,
@@ -276,11 +299,10 @@ function EducationSection({
   qualifications,
   onQualificationChange,
 }) {
-  const LEVELS = ["tenth", "twelfth", "graduation", "postgraduation"];
+  const LEVELS = ['tenth', 'twelfth', 'graduation', 'postgraduation'];
 
   const endIndex = LEVELS.indexOf(highestQualification);
-  const visibleLevels =
-    endIndex >= 0 ? LEVELS.slice(0, endIndex + 1) : [];
+  const visibleLevels = endIndex >= 0 ? LEVELS.slice(0, endIndex + 1) : [];
 
   return (
     <div className="card">
@@ -306,9 +328,7 @@ function EducationSection({
           key={level}
           className="p-5 bg-neutral-50 border border-neutral-200 rounded-xl mb-6"
         >
-          <h3 className="font-semibold mb-4 capitalize">
-            {level}
-          </h3>
+          <h3 className="font-semibold mb-4 capitalize">{level}</h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {Object.keys(qualifications[level]).map((field) => (
@@ -321,11 +341,7 @@ function EducationSection({
                   value={qualifications[level][field]}
                   required={true}
                   onChange={(e) =>
-                    onQualificationChange(
-                      level,
-                      field,
-                      e.target.value
-                    )
+                    onQualificationChange(level, field, e.target.value)
                   }
                   className="input"
                 />
@@ -338,8 +354,14 @@ function EducationSection({
   );
 }
 
-
-function ResumeCard({ index, file, uploaded, uploading, onFileChange, onUpload }) {
+function ResumeCard({
+  index,
+  file,
+  uploaded,
+  uploading,
+  onFileChange,
+  onUpload,
+}) {
   const hasUploaded = Boolean(uploaded?.url);
 
   return (
@@ -353,16 +375,30 @@ function ResumeCard({ index, file, uploaded, uploading, onFileChange, onUpload }
           className="hidden"
         />
         <div className="flex-shrink-0">
-          <svg className="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" />
+          <svg
+            className="w-6 h-6 text-neutral-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M12 4v16m8-8H4"
+            />
           </svg>
         </div>
         <div>
           <p className="text-sm font-medium text-neutral-900">
-            {file ? `New: ${file.name}` : uploaded?.fileName || `Resume ${index + 1}`}
+            {file
+              ? `New: ${file.name}`
+              : uploaded?.fileName || `Resume ${index + 1}`}
           </p>
           {!file && !uploaded && (
-            <p className="text-xs text-neutral-500">Click to select a PDF file</p>
+            <p className="text-xs text-neutral-500">
+              Click to select a PDF file
+            </p>
           )}
         </div>
       </label>
@@ -374,20 +410,22 @@ function ResumeCard({ index, file, uploaded, uploading, onFileChange, onUpload }
           onClick={() => onUpload(index)}
           disabled={uploading || !file}
           className={`px-4 py-2 rounded-lg font-medium text-white transition ${
-            uploading || !file ? "bg-gray-400 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700"
+            uploading || !file
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-emerald-600 hover:bg-emerald-700'
           }`}
         >
-          {uploading ? "Uploading..." : "Upload"}
+          {uploading ? 'Uploading...' : 'Upload'}
         </button>
 
         <a
-          href={hasUploaded ? uploaded.url : "#"}
+          href={hasUploaded ? uploaded.url : '#'}
           target="_blank"
           rel="noopener noreferrer"
           className={`px-4 py-2 rounded-lg font-medium text-white text-center transition ${
             hasUploaded
-              ? "bg-blue-600 hover:bg-blue-700"
-              : "bg-gray-400 cursor-not-allowed pointer-events-none"
+              ? 'bg-blue-600 hover:bg-blue-700'
+              : 'bg-gray-400 cursor-not-allowed pointer-events-none'
           }`}
         >
           View
@@ -396,7 +434,6 @@ function ResumeCard({ index, file, uploaded, uploading, onFileChange, onUpload }
     </div>
   );
 }
-
 
 function ResumeSection({
   resumeFiles,
@@ -407,28 +444,21 @@ function ResumeSection({
 }) {
   return (
     <div className="card">
-      <h2 className="text-xl font-semibold mb-6">Upload Resumes</h2>
-      <p className="text-neutral-600 text-sm mb-6">
-        You can upload up to 3 resumes
-      </p>
+      <h2 className="text-xl font-semibold mb-6">Upload Resume</h2>
 
       <div className="space-y-4">
-        {[0, 1, 2].map((i) => (
-          <ResumeCard
-            key={i}
-            index={i}
-            file={resumeFiles[i]}
-            uploaded={uploadedResumes[i]}
-            uploading={uploading}
-            onFileChange={onResumeChange}
-            onUpload={onUploadResume}
-          />
-        ))}
+        <ResumeCard
+          index={0}
+          file={resumeFiles[0]}
+          uploaded={uploadedResumes[0]}
+          uploading={uploading}
+          onFileChange={onResumeChange}
+          onUpload={onUploadResume}
+        />
       </div>
     </div>
   );
 }
-
 
 function BasicInfoSection({
   user,
@@ -458,7 +488,7 @@ function BasicInfoSection({
           <div className="flex gap-2">
             <input
               type="email"
-              value={user?.email || ""}
+              value={user?.email || ''}
               disabled
               className="input flex-1 bg-neutral-100 text-neutral-500 cursor-not-allowed"
             />
@@ -516,4 +546,3 @@ function BasicInfoSection({
     </div>
   );
 }
-
