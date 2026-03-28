@@ -162,16 +162,20 @@ function ResumesSection({ resumes }) {
 }
 
 function EducationSection({ user }) {
-  if (!user?.highestQualification || !user?.qualifications) return null;
+  if (!user?.qualifications) return null;
 
-  const qualificationLevels = {
-    tenth: ['tenth'],
-    twelfth: ['tenth', 'twelfth'],
-    graduation: ['tenth', 'twelfth', 'graduation'],
-    postgraduation: ['tenth', 'twelfth', 'graduation', 'postgraduation'],
+  const ORDER = ['tenth', 'twelfth', 'graduation', 'postgraduation'];
+
+  const LABELS = {
+    tenth: '10th Standard',
+    twelfth: '12th Standard',
+    graduation: 'Graduation',
+    postgraduation: 'Post Graduation',
   };
 
-  const levelsToShow = qualificationLevels[user.highestQualification] || [];
+  const availableLevels = ORDER.filter(
+    (level) => user.qualifications[level]?.startYear !== null
+  );
 
   const renderBlock = (title, data) => {
     if (!data || typeof data !== 'object') return null;
@@ -184,22 +188,22 @@ function EducationSection({ user }) {
           {Object.entries(data).map(([key, value]) => {
             if (key === 'completed') return null;
 
-            const isMissing =
-              value === null || value === undefined || value === '';
+            if (key === 'cgpa' && data.percentage) return null;
+            if (key === 'percentage' && data.cgpa) return null;
 
             return (
               <div key={key}>
                 <label className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
-                  {key}
+                  {key === 'cgpa'
+                    ? 'CGPA'
+                    : key === 'percentage'
+                      ? 'Percentage'
+                      : key}
                 </label>
 
-                {isMissing ? (
-                  <p className="mt-1 text-sm font-semibold text-red-600">
-                    Missing
-                  </p>
-                ) : (
-                  <p className="text-neutral-900 mt-1">{String(value)}</p>
-                )}
+                <p className="text-neutral-900 mt-1">
+                  {value ? String(value) : '-'}
+                </p>
               </div>
             );
           })}
@@ -214,32 +218,29 @@ function EducationSection({ user }) {
         Education Details
       </h2>
 
-      <div className="mb-6 pb-6 border-b border-neutral-200">
-        <label className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
-          Highest Qualification
-        </label>
-        <p className="text-neutral-900 mt-2 font-medium capitalize text-lg">
-          {user.highestQualification}
-        </p>
-      </div>
+      {user.highestQualification && (
+        <div className="mb-6 pb-6 border-b border-neutral-200">
+          <label className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
+            Highest Qualification
+          </label>
+          <p className="text-neutral-900 mt-2 font-medium capitalize text-lg">
+            {user.highestQualification}
+          </p>
+        </div>
+      )}
 
       <div className="space-y-6">
-        {levelsToShow.includes('tenth') &&
-          renderBlock('10th Standard', user.qualifications.tenth)}
-
-        {levelsToShow.includes('twelfth') &&
-          renderBlock('12th Standard', user.qualifications.twelfth)}
-
-        {levelsToShow.includes('graduation') &&
-          renderBlock('Graduation', user.qualifications.graduation)}
-
-        {levelsToShow.includes('postgraduation') &&
-          renderBlock('Post Graduation', user.qualifications.postgraduation)}
+        {availableLevels.length > 0 ? (
+          availableLevels.map((level) =>
+            renderBlock(LABELS[level], user.qualifications[level])
+          )
+        ) : (
+          <p className="text-neutral-500">No education details available.</p>
+        )}
       </div>
     </div>
   );
 }
-
 /* ----------------------- Admin Sections ----------------------- */
 
 function RecruiterStatsSection({ stats }) {

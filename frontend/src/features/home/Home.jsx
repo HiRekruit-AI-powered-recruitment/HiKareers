@@ -72,11 +72,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      {isLoggedIn && user && (
-        <ProfileCompletionProvider user={user} resumes={resumes}>
-          <ProfileCompletionBanner />
-        </ProfileCompletionProvider>
-      )}
+      {isLoggedIn && user && <ProfileCompletionBanner />}
       <div className="relative bg-gradient-to-br from-gray-900 to-blue-900 text-white h-screen flex justify-center items-center">
         <div className="max-w-6xl mx-auto px-4 py-16 md:py-16">
           <div className="text-center max-w-3xl mx-auto">
