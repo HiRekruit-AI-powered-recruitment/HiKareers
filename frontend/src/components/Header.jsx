@@ -94,12 +94,16 @@ export function Header() {
           <div className="hidden md:flex items-center gap-3">
             {loggedIn ? (
               <>
-                <button
-                  onClick={isAdmin ? () => navigate('/admin/jobs/new') : handleApply}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-                >
-                  {isAdmin ? 'Post a Job' : 'Apply for Job'}
-                </button>
+                {!isAdmin && (
+                  <button
+                    onClick={
+                      isAdmin ? () => navigate('/admin/jobs/new') : handleApply
+                    }
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                  >
+                    Apply for Job
+                  </button>
+                )}
 
                 {/* User Menu */}
                 <div className="relative group">
@@ -233,10 +237,19 @@ export function Header() {
                     My Profile
                   </a>
                   <button
-                    onClick={user?.userType === 'admin' ? () => { navigate('/admin/jobs/new'); setMobileMenuOpen(false); } : handleApply}
+                    onClick={
+                      user?.userType === 'admin'
+                        ? () => {
+                            navigate('/admin/jobs/new');
+                            setMobileMenuOpen(false);
+                          }
+                        : handleApply
+                    }
                     className="mx-4 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
                   >
-                    {user?.userType === 'admin' ? 'Post a Job' : 'Apply for Job'}
+                    {user?.userType === 'admin'
+                      ? 'Post a Job'
+                      : 'Apply for Job'}
                   </button>
                   <button
                     onClick={handleLogout}
