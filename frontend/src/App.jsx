@@ -1,10 +1,13 @@
 // src/App.jsx
 import React from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
+import { Routes, Route } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ProfileCompletionProvider } from './contexts/ProfileCompletionContext';
+
 import ProtectedRoute from './components/ProtectedRoute';
 import Header from './components/Header';
 import Footer from './components/Footer';
+
 import Login from './features/auth/Login';
 import Signup from './features/auth/Signup';
 import Profile from './features/profile/Profile';
@@ -22,6 +25,7 @@ import AdminApplications from './features/admin/AdminApplications';
 import PostJob from './features/admin/PostJob';
 import EditJob from './features/admin/EditJob';
 import RecruiterJobs from './features/admin/RecruiterJobs';
+
 import About from './FooterPages/About';
 import Contact from './FooterPages/Contact';
 import HelpCenter from './FooterPages/HelpCenter';
@@ -30,16 +34,22 @@ import TermsofService from './FooterPages/TermsofService';
 import CookiePolicy from './FooterPages/CookiePolicy';
 import MockInterview from './features/mockInterview/MockInterview';
 
-function App() {
+function AppContent() {
+  const { user } = useAuth();
+
+  const resumes = user?.resumes?.['1'] ? [user.resumes['1']] : [];
+
   return (
     <AuthProvider>
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header />
+
         <main className="flex-1">
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/" element={<Home />} />
+
             <Route
               path="/profile"
               element={
@@ -48,6 +58,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/profile/edit"
               element={
@@ -56,6 +67,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/apply"
               element={
@@ -64,6 +76,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/apply/:jobId"
               element={
@@ -72,6 +85,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/applications"
               element={
@@ -90,6 +104,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/admin/jobs/new"
               element={
@@ -98,6 +113,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/admin/applications"
               element={
@@ -106,6 +122,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/admin/jobs/:jobId/applications"
               element={
@@ -114,6 +131,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/admin/jobs"
               element={
@@ -122,6 +140,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/admin/jobs/:jobId/edit"
               element={
@@ -130,9 +149,11 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route path="/interview" element={<MockInterview />} />
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/jobs/:jobId" element={<JobDetails />} />
+
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/help" element={<HelpCenter />} />
@@ -141,8 +162,18 @@ function App() {
             <Route path="/cookies" element={<CookiePolicy />} />
           </Routes>
         </main>
+
         <Footer />
       </div>
+    </ProfileCompletionProvider>
+  );
+}
+
+// 🔥 Root App
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
     </AuthProvider>
   );
 }

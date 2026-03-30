@@ -65,7 +65,6 @@ export const uploadUserResumes = asyncHandler(async (req, res) => {
 });
 
 export const getCurrentUser = asyncHandler(async (req, res) => {
-  console.log('Current user:', req.user);
   return res
     .status(200)
     .json(new ApiResponse(200, 'User fetched successfully', req.user));
