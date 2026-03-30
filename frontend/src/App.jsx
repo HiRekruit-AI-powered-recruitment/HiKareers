@@ -40,9 +40,7 @@ function AppContent() {
   const resumes = user?.resumes?.['1'] ? [user.resumes['1']] : [];
 
   return (
-    <ProfileCompletionProvider user={user} resumes={resumes}>
-      <ChatBot />
-
+    <AuthProvider>
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header />
 
