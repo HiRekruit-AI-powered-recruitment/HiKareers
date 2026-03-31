@@ -249,3 +249,30 @@ export const getAdminStats = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, 'Admin stats fetched successfully', stats));
 });
+
+export const getAllResumes = asyncHandler(async (req, res) => {
+  const { jobId } = req.params;
+
+  const job = await Job.findById(jobId);
+
+  if (!job) {
+    throw new ApiError(404, 'Job not found');
+  }
+
+  if (job.createdBy.toString() !== req.user._id.toString()) {
+    throw new ApiError(403, 'You are not authorized to get data for this job');
+  }
+
+  const applications = await Application.find(
+    { jobId },
+    { resumeUrl: 1, _id: 0 }
+  );
+
+  const allResumes = applications.map((app) => app.resumeUrl);
+  if (!applications.length) {
+    return res.status(200).json(new ApiResponse(200, 'No resumes found', []));
+  }
+  return res
+    .status(200)
+    .json(new ApiResponse(200, 'All resumes fetched successfully', allResumes));
+});
