@@ -4,14 +4,27 @@ import EmailVerificationDialog from './components/EmailVerificationDialog.jsx';
 import MobileVerificationDialog from './components/MobileVerificationDialog.jsx';
 
 const EMPTY_QUALIFICATIONS = {
-  tenth: { startYear: '', endYear: '', percentage: '' },
-  twelfth: { startYear: '', endYear: '', percentage: '' },
+  tenth: {
+    startYear: '',
+    endYear: '',
+    percentage: '',
+    cgpa: '',
+    scoreType: 'percentage',
+  },
+  twelfth: {
+    startYear: '',
+    endYear: '',
+    percentage: '',
+    cgpa: '',
+    scoreType: 'percentage',
+  },
   graduation: {
     courseName: '',
     startYear: '',
     endYear: '',
     cgpa: '',
-    degree: '',
+    percentage: '',
+    scoreType: 'percentage',
     specialization: '',
   },
   postgraduation: {
@@ -19,7 +32,8 @@ const EMPTY_QUALIFICATIONS = {
     startYear: '',
     endYear: '',
     cgpa: '',
-    degree: '',
+    percentage: '',
+    scoreType: 'percentage',
     specialization: '',
   },
 };
@@ -155,23 +169,6 @@ export default function EditProfile() {
       return;
     }
 
-    // Education validation
-    const LEVELS = ['tenth', 'twelfth', 'graduation', 'postgraduation'];
-    const endIndex = LEVELS.indexOf(highestQualification);
-    const visibleLevels = endIndex >= 0 ? LEVELS.slice(0, endIndex + 1) : [];
-
-    for (const level of visibleLevels) {
-      const fields = Object.keys(qualifications[level]);
-      for (const field of fields) {
-        const value = qualifications[level][field];
-        if (value === null || value === undefined || value === '') {
-          setError(`Please fill all fields for ${level} (${field})`);
-          setSaving(false);
-          return;
-        }
-      }
-    }
-
     try {
       const payload = buildPayload({
         form,
@@ -179,7 +176,7 @@ export default function EditProfile() {
         qualifications,
         original: originalUser,
       });
-
+      console.log(payload);
       if (!Object.keys(payload).length) {
         setSuccess('No changes to apply');
         setSaving(false);
@@ -189,6 +186,7 @@ export default function EditProfile() {
       const res = await userAPI.updateProfile(payload);
       if (res.success) {
         setSuccess('Profile updated successfully!');
+
         await loadProfile();
       } else setError(res.message || 'Update failed');
     } catch (e) {
@@ -300,9 +298,13 @@ function EducationSection({
   onQualificationChange,
 }) {
   const LEVELS = ['tenth', 'twelfth', 'graduation', 'postgraduation'];
+  const [selectedEducation, setSelectedEducation] = useState('');
+  const visibleIndex = LEVELS.indexOf(selectedEducation);
 
-  const endIndex = LEVELS.indexOf(highestQualification);
-  const visibleLevels = endIndex >= 0 ? LEVELS.slice(0, endIndex + 1) : [];
+  const current =
+    visibleIndex >= 0 ? qualifications[LEVELS[visibleIndex]] || {} : {};
+
+  const scoreType = current?.scoreType || 'percentage';
 
   return (
     <div className="card">
@@ -312,7 +314,15 @@ function EducationSection({
         <label className="label">Highest Qualification *</label>
         <select
           value={highestQualification}
-          onChange={(e) => setHighestQualification(e.target.value)}
+          onChange={(e) => {
+            setSelectedEducation(e.target.value);
+            if (
+              LEVELS.indexOf(e.target.value) >
+              LEVELS.indexOf(highestQualification)
+            ) {
+              setHighestQualification(e.target.value);
+            }
+          }}
           className="input"
         >
           <option value="">Select your highest qualification</option>
@@ -323,33 +333,148 @@ function EducationSection({
         </select>
       </div>
 
-      {visibleLevels.map((level) => (
-        <div
-          key={level}
-          className="p-5 bg-neutral-50 border border-neutral-200 rounded-xl mb-6"
-        >
-          <h3 className="font-semibold mb-4 capitalize">{level}</h3>
+      {visibleIndex >= 0 &&
+        Object.keys(current).map((field) => {
+          if (
+            field === 'cgpa' ||
+            field === 'percentage' ||
+            field === 'scoreType' ||
+            field === 'completed'
+          )
+            return null;
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {Object.keys(qualifications[level]).map((field) => (
+          if (field === 'startYear' || field === 'endYear') {
+            const currentYear = new Date().getFullYear();
+            const startYear = Number(current?.startYear) || 0;
+            const endYear = Number(current?.endYear) || 0;
+
+            let error = '';
+            if (field === 'startYear') {
+              if (current?.startYear && startYear > currentYear)
+                error = `Start year cannot be greater than ${currentYear}`;
+              if (current?.startYear && endYear && startYear > endYear)
+                error = 'Start year cannot be after end year';
+            }
+            if (field === 'endYear') {
+              if (current?.endYear && startYear && endYear < startYear)
+                error = 'End year cannot be before start year';
+            }
+
+            return (
               <div key={field}>
                 <label className="label">
-                  {field}
-                  {<span className="text-red-600 ml-1">*</span>}
+                  {field === 'startYear' ? 'Start Year' : 'End Year'}
+                  <span className="text-red-600 ml-1">*</span>
                 </label>
                 <input
-                  value={qualifications[level][field]}
-                  required={true}
+                  type="number"
+                  value={current?.[field] || ''}
                   onChange={(e) =>
-                    onQualificationChange(level, field, e.target.value)
+                    onQualificationChange(
+                      LEVELS[visibleIndex],
+                      field,
+                      e.target.value
+                    )
                   }
                   className="input"
                 />
+                {error && <p className="text-red-500 text-sm">{error}</p>}
               </div>
-            ))}
+            );
+          }
+
+          return (
+            <div key={field}>
+              <label className="label">
+                {field}
+                <span className="text-red-600 ml-1">*</span>
+              </label>
+              <input
+                value={current?.[field] || ''}
+                onChange={(e) =>
+                  onQualificationChange(
+                    LEVELS[visibleIndex],
+                    field,
+                    e.target.value
+                  )
+                }
+                className="input"
+              />
+            </div>
+          );
+        })}
+
+      {visibleIndex >= 0 && (
+        <div>
+          <label className="label">
+            {scoreType === 'cgpa' ? 'CGPA' : 'Percentage'}
+            <span className="text-red-600 ml-1">*</span>
+          </label>
+
+          <div className="flex items-center gap-3">
+            <input
+              type="number"
+              min={0}
+              max={scoreType === 'cgpa' ? 10 : 100}
+              value={current?.[scoreType] || ''}
+              onChange={(e) =>
+                onQualificationChange(
+                  LEVELS[visibleIndex],
+                  scoreType,
+                  e.target.value
+                )
+              }
+              className="input"
+            />
+
+            <div className="flex gap-3">
+              {['percentage', 'cgpa'].map((type) => (
+                <label
+                  key={type}
+                  className="flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                >
+                  <input
+                    type="radio"
+                    name="scoreType"
+                    value={type}
+                    checked={scoreType === type}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      onQualificationChange(
+                        LEVELS[visibleIndex],
+                        'scoreType',
+                        value
+                      );
+                      if (value === 'cgpa') {
+                        onQualificationChange(
+                          LEVELS[visibleIndex],
+                          'percentage',
+                          ''
+                        );
+                      } else {
+                        onQualificationChange(LEVELS[visibleIndex], 'cgpa', '');
+                      }
+                    }}
+                  />
+                  {type === 'percentage' ? 'Percentage' : 'CGPA'}
+                </label>
+              ))}
+            </div>
           </div>
+
+          {scoreType === 'cgpa' && current?.cgpa > 10 && (
+            <p className="text-red-500 text-sm">
+              CGPA cannot be greater than 10
+            </p>
+          )}
+
+          {scoreType === 'percentage' && current?.percentage > 100 && (
+            <p className="text-red-500 text-sm">
+              Percentage cannot be greater than 100
+            </p>
+          )}
         </div>
-      ))}
+      )}
     </div>
   );
 }

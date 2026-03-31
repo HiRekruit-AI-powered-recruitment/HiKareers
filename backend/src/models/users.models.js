@@ -1,11 +1,14 @@
-import dotenv from "dotenv";
+import dotenv from 'dotenv';
 dotenv.config();
 
-import mongoose from "mongoose";
-import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";
-import { isProfileCompleted, isQualificationCompleted } from "./helperFunctions.models.js";
-import { watchedFields } from "./constants.models.js";
+import mongoose from 'mongoose';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
+import {
+  isProfileCompleted,
+  isQualificationCompleted,
+} from './helperFunctions.models.js';
+import { watchedFields } from './constants.models.js';
 
 const resume = mongoose.Schema(
   {
@@ -17,7 +20,7 @@ const resume = mongoose.Schema(
       default: Date.now,
     },
   },
-  { _id: false },
+  { _id: false }
 );
 
 const userSchema = mongoose.Schema(
@@ -40,8 +43,8 @@ const userSchema = mongoose.Schema(
     },
     userType: {
       type: String,
-      enum: ["applicant", "admin"],
-      default: "applicant",
+      enum: ['applicant', 'admin'],
+      default: 'applicant',
     },
     fullName: {
       type: String,
@@ -87,45 +90,50 @@ const userSchema = mongoose.Schema(
     },
     highestQualification: {
       type: String,
-      enum: ["tenth", "twelfth", "graduation", "postgraduation", null],
+      enum: ['tenth', 'twelfth', 'graduation', 'postgraduation', null],
       default: null,
     },
     qualifications: {
       tenth: {
         completed: { type: Boolean, default: false },
+        institutionName: { type: String, default: null },
         startYear: { type: Number, default: null },
         endYear: { type: Number, default: null },
         percentage: { type: Number, min: 0, max: 100 },
+        cgpa: { type: Number, min: 0, max: 10 },
       },
       twelfth: {
         completed: { type: Boolean, default: false },
+        institutionName: { type: String, default: null },
         startYear: { type: Number, default: null },
         endYear: { type: Number, default: null },
         percentage: { type: Number, min: 0, max: 100 },
+        cgpa: { type: Number, min: 0, max: 10 },
       },
       graduation: {
         completed: { type: Boolean, default: false },
+        institutionName: { type: String, default: null },
         courseName: { type: String, default: null },
         startYear: { type: Number, default: null },
         endYear: { type: Number, default: null },
         cgpa: { type: Number, min: 0, max: 10 },
-        degree: { type: String, default: null },
+        percentage: { type: Number, min: 0, max: 100 },
         specialization: { type: String, default: null },
       },
       postgraduation: {
         completed: { type: Boolean, default: false },
+        institutionName: { type: String, default: null },
         courseName: { type: String, default: null },
         startYear: { type: Number, default: null },
         endYear: { type: Number, default: null },
         percentage: { type: Number, min: 0, max: 100 },
         cgpa: { type: Number, min: 0, max: 10 },
-        degree: { type: String, default: null },
         specialization: { type: String, default: null },
       },
     },
     refreshToken: String,
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 userSchema.methods.isPasswordCorrect = async function (password) {
@@ -134,36 +142,33 @@ userSchema.methods.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
 
-userSchema.pre("save", async function () {
-  if (!this.isModified("password")) return;
+userSchema.pre('save', async function () {
+  if (!this.isModified('password')) return;
 
   this.password = await bcrypt.hash(this.password, 10);
 });
 
-userSchema.pre("save", function () {
-  if (!this.isModified("qualifications")) return;
+userSchema.pre('save', function () {
+  if (!this.isModified('qualifications')) return;
   const q = this.qualifications;
 
   if (!q) return;
 
-  q.tenth.completed = isQualificationCompleted("tenth", q.tenth);
-  q.twelfth.completed = isQualificationCompleted("twelfth", q.twelfth);
-  q.graduation.completed = isQualificationCompleted("graduation", q.graduation);
+  q.tenth.completed = isQualificationCompleted('tenth', q.tenth);
+  q.twelfth.completed = isQualificationCompleted('twelfth', q.twelfth);
+  q.graduation.completed = isQualificationCompleted('graduation', q.graduation);
   q.postgraduation.completed = isQualificationCompleted(
-    "postgraduation",
-    q.postgraduation,
+    'postgraduation',
+    q.postgraduation
   );
 });
 
-userSchema.pre("save", function () {
-
+userSchema.pre('save', function () {
   if (!watchedFields.some((f) => this.isModified(f))) {
     return;
   }
   this.profileCompleted = isProfileCompleted(this);
 });
-
-
 
 userSchema.methods.generateRefreshToken = async function () {
   const payload = {
@@ -174,13 +179,13 @@ userSchema.methods.generateRefreshToken = async function () {
 
   const options = {
     expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
-    algorithm: "HS256",
+    algorithm: 'HS256',
   };
 
   const refreshToken = await jwt.sign(
     payload,
     process.env.REFRESH_TOKEN_SECRET,
-    options,
+    options
   );
 
   return refreshToken;
@@ -195,17 +200,17 @@ userSchema.methods.generateAccessToken = async function () {
 
   const options = {
     expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
-    algorithm: "HS256",
+    algorithm: 'HS256',
   };
 
   const accessToken = await jwt.sign(
     payload,
     process.env.ACCESS_TOKEN_SECRET,
-    options,
+    options
   );
 
   return accessToken;
 };
 
-export const User = mongoose.model("User", userSchema);
+export const User = mongoose.model('User', userSchema);
 5;

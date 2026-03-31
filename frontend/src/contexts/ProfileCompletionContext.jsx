@@ -2,7 +2,6 @@ import React, { createContext, useContext, useMemo } from 'react';
 
 const ProfileCompletionContext = createContext(null);
 
-// Max points: basicInfo(4) + resume(2) + education(4) = 10
 function calcBasicInfoScore(user) {
   if (!user) return 0;
   let score = 0;
@@ -10,14 +9,14 @@ function calcBasicInfoScore(user) {
   if (user.userName) score++;
   if (user.email) score++;
   if (user.mobile) score++;
-  // Email must also be verified for full score
-  if (!user.emailVerified) score = Math.max(0, score - 1);
+  if (user.emailVerified) score++;
   return score;
 }
 
-function calcResumeScore(resumes) {
-  // 2pts if resume is uploaded, else 0
-  const hasResume = resumes[0];
+function calcResumeScore(user) {
+  const resumes = user?.resumes;
+  if (!resumes) return 0;
+  const hasResume = Object.values(resumes).some((r) => r !== null);
   return hasResume ? 2 : 0;
 }
 
@@ -37,37 +36,48 @@ function calcEducationScore(user) {
   const isLevelComplete = (level) => {
     const data = user.qualifications[level];
     if (!data || typeof data !== 'object') return false;
+
+    const scoreType =
+      data.scoreType ||
+      (data.cgpa !== null && data.cgpa !== '' ? 'cgpa' : 'percentage');
+
     return Object.entries(data).every(([key, value]) => {
       if (key === 'completed') return true;
+      if (key === 'scoreType') return true;
+      if (key === 'cgpa' && scoreType !== 'cgpa') return true;
+      if (key === 'percentage' && scoreType !== 'percentage') return true;
       return value !== null && value !== undefined && value !== '';
     });
   };
 
-  // 1pt per completed level, max 4pts
   return levels.reduce((sum, level) => {
     return sum + (isLevelComplete(level) ? 1 : 0);
   }, 0);
 }
 
-export function ProfileCompletionProvider({ user, resumes, children }) {
+export function ProfileCompletionProvider({ user, children }) {
   const value = useMemo(() => {
     const basicInfoScore = calcBasicInfoScore(user);
-    const resumeScore = calcResumeScore(resumes);
+    const resumeScore = calcResumeScore(user);
     const educationScore = calcEducationScore(user);
 
     const totalScore = basicInfoScore + resumeScore + educationScore;
-    const maxScore = 10;
+    const maxScore = 11; // 5 basicInfo + 2 resume + 4 education
     const percentage = Math.round((totalScore / maxScore) * 100);
 
     const incompleteSections = [];
-    if (basicInfoScore < 4)
+    if (basicInfoScore < 5)
       incompleteSections.push({
         label: 'Basic Info',
         score: basicInfoScore,
-        max: 4,
+        max: 5,
       });
     if (resumeScore < 2)
-      incompleteSections.push({ label: 'Resume', score: resumeScore, max: 2 });
+      incompleteSections.push({
+        label: 'Resume',
+        score: resumeScore,
+        max: 2,
+      });
     if (educationScore < 4)
       incompleteSections.push({
         label: 'Education Details',
@@ -84,7 +94,7 @@ export function ProfileCompletionProvider({ user, resumes, children }) {
       percentage,
       incompleteSections,
     };
-  }, [user, resumes]);
+  }, [user]);
 
   return (
     <ProfileCompletionContext.Provider value={value}>

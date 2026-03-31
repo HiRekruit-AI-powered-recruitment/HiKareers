@@ -1,30 +1,42 @@
-import asyncHandler from "../utils/asyncHandler.utils.js"
-import jwt from "jsonwebtoken"
-import ApiError from "../utils/ApiError.utils.js"
-import { User } from "../models/users.models.js"
-
+import asyncHandler from '../utils/asyncHandler.utils.js';
+import jwt from 'jsonwebtoken';
+import ApiError from '../utils/ApiError.utils.js';
+import { User } from '../models/users.models.js';
 
 const verifyUser = asyncHandler(async (req, res, next) => {
-    const accessToken = (req.header("Authorization")?.replace("Bearer ", "")) || req.cookies?.accessToken
+  const accessToken =
+    req.header('Authorization')?.replace('Bearer ', '') ||
+    req.cookies?.accessToken;
 
-    if (!accessToken) {
-        throw new ApiError(401, "Unauthorized Access", "accessToken not found", "verifyUser: auth.middleWare.js")
-    }
+  if (!accessToken) {
+    throw new ApiError(
+      401,
+      'Unauthorized Access',
+      'accessToken not found',
+      'verifyUser: auth.middleWare.js'
+    );
+  }
 
-    const decodedToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET)
+  const decodedToken = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
 
-    if (!decodedToken) {
-        throw new ApiError(401, "Unauthorized Access", "accessToken has expired", "verifyUser: auth.middleWare.js")
-    }
+  if (!decodedToken) {
+    throw new ApiError(
+      401,
+      'Unauthorized Access',
+      'accessToken has expired',
+      'verifyUser: auth.middleWare.js'
+    );
+  }
 
-    const user = await User.findById(decodedToken?._id).select("-password -refreshToken")
+  const user = await User.findById(decodedToken?._id).select(
+    '-password -refreshToken'
+  );
 
-    if (!user)
-        throw new ApiError(401, "User not found")
+  if (!user) throw new ApiError(401, 'User not found');
 
-    req.user = user
-    console.log("Verified user:", user);
-    next()
-})
+  req.user = user;
 
-export default verifyUser
+  next();
+});
+
+export default verifyUser;
