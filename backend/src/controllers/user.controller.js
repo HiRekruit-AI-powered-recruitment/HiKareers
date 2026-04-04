@@ -4,8 +4,8 @@ import ApiResponse from '../utils/ApiResponse.utils.js';
 import { User } from '../models/users.models.js';
 import UploadToCloudinary from '../utils/UploadToCloudinary.utils.js';
 import cloudinary from '../config/cloudinary.js';
-import { v2 } from 'cloudinary';
 import { extractTextFromBuffer } from '../utils/textExtractorResume.js';
+import { extractSkills, parseSkills } from '../utils/qroq.js';
 
 export const uploadUserResumes = asyncHandler(async (req, res) => {
   if (!req.file) {
@@ -34,13 +34,20 @@ export const uploadUserResumes = asyncHandler(async (req, res) => {
   const extractedText = await extractTextFromBuffer(fileBuffer);
   user.resumeText = extractedText;
 
+  const rawSkills = await extractSkills(user.resumeText);
+  const skills = parseSkills(rawSkills);
+
+  if (skills.technical_skills) {
+    user.skills = skills.technical_skills;
+  }
+
   if (user.resumes?.[slotKey]?.publicId) {
     await cloudinary.uploader.destroy(user.resumes[slotKey].publicId, {
       resource_type: 'raw',
     });
   }
   const result = await UploadToCloudinary(
-    fileBuffer, // ✅ use fileBuffer not resumeFile.buffer
+    fileBuffer,
     `user_resume/${user._id}`,
     `${slotKey}`,
     { format: ext }

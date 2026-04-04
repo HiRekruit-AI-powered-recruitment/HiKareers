@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "groq-sdk": "^1.1.2",
     "pdfjs-dist": "^5.6.205"
   }
 }
