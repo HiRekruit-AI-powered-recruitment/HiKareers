@@ -88,6 +88,14 @@ const userSchema = mongoose.Schema(
       2: { type: resume, default: null },
       3: { type: resume, default: null },
     },
+    skills: {
+      type: [String],
+      default: [],
+    },
+    resumeText: {
+      type: String,
+      default: '',
+    },
     highestQualification: {
       type: String,
       enum: ['tenth', 'twelfth', 'graduation', 'postgraduation', null],

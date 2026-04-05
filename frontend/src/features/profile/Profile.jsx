@@ -122,7 +122,7 @@ function ResumesSection({ resumes }) {
         <div className="space-y-4">
           {resumes.map((resume, index) => {
             if (!resume) return null;
-
+            console.log('Resume URL:', resume.url);
             return (
               <div
                 key={index}
