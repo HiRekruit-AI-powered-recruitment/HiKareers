@@ -3,7 +3,9 @@ import ApiError from '../utils/ApiError.utils.js';
 import ApiResponse from '../utils/ApiResponse.utils.js';
 import { Job } from '../models/jobs.models.js';
 import { Application } from '../models/applications.model.js';
-
+import { User } from '../models/users.models.js';
+import calculateMatchPercentage from '../utils/calSkillsMatchPercentage.js';
+import { sendBulkMails } from '../utils/sendJobNotifications.js';
 // Helper to strip currency symbols from salary
 const sanitizeSalary = (salary) => {
   if (!salary) return salary;
@@ -65,6 +67,27 @@ export const createJob = asyncHandler(async (req, res) => {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
   const applyLink = `${frontendUrl}/apply/${job._id}`;
 
+  const matchedUsers = [];
+  const users = await User.find({ skills: { $exists: true, $ne: [] } });
+
+  for (let user of users) {
+    const match = calculateMatchPercentage(user.skills, skills);
+
+    if (match >= 80) {
+      matchedUsers.push({
+        email: user.email,
+        name: user.fullName,
+      });
+    }
+  }
+
+  console.log(matchedUsers);
+  await sendBulkMails({
+    users: matchedUsers,
+    applyLink,
+    company: job.company,
+    description: job.description,
+  });
   return res
     .status(201)
     .json(new ApiResponse(201, 'Job created successfully', { job, applyLink }));

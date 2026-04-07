@@ -221,4 +221,3 @@ userSchema.methods.generateAccessToken = async function () {
 };
 
 export const User = mongoose.model('User', userSchema);
-5;
