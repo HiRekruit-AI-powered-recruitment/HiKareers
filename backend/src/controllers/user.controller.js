@@ -85,7 +85,6 @@ export const getCurrentUser = asyncHandler(async (req, res) => {
 export const updateUserProfile = asyncHandler(async (req, res) => {
   const { fullName, mobile, highestQualification, qualifications } = req.body;
   const user = await User.findOne(req.user._id);
-
   if (!fullName && !mobile && !highestQualification && !qualifications)
     throw new ApiError(400, 'At least one field is required to update');
   if (!user) throw new ApiError(404, 'User not found');

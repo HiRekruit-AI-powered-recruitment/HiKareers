@@ -17,7 +17,6 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, isAuthenticated: loggedIn, logout } = useAuth();
   const navigate = useNavigate();
-
   const isAdmin = user?.userType === 'admin';
 
   function handleLogout() {
@@ -108,12 +107,22 @@ export function Header() {
                 {/* User Menu */}
                 <div className="relative group">
                   <button className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
-                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                      {user?.fullName?.charAt(0) || 'U'}
-                    </div>
+                    {user?.profilePhoto?.imageUrl ? (
+                      <img
+                        src={user.profilePhoto.imageUrl}
+                        alt={user?.fullName || 'User'}
+                        className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                        {user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
+                      </div>
+                    )}
+
                     <span className="font-medium text-sm max-w-32 truncate">
                       {user?.fullName || user?.userName}
                     </span>
+
                     <ChevronDown className="w-4 h-4" />
                   </button>
 

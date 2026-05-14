@@ -4,27 +4,52 @@ import ApiResponse from '../utils/ApiResponse.utils.js';
 import { User } from '../models/users.models.js';
 import jwt from 'jsonwebtoken';
 import { sendMail } from '../utils/SendEmail.utils.js';
+import UploadImageToCloudinary from '../utils/UploadImageToCloudinary.js';
 
 export const register = asyncHandler(async (req, res) => {
-  const { userName, email, fullName, password } = req.body;
+  const { email, fullName, password } = req.body;
   const options = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
   };
 
-  if (!userName || !email || !fullName || !password) {
+  if (!email || !fullName || !password) {
     throw new ApiError(400, 'All fields are required');
   }
 
   const existingUser = await User.findOne({
-    $or: [{ userName }, { email }],
+    $or: [{ email }],
   });
 
   if (existingUser) {
     throw new ApiError(409, 'User with email or username already exists');
   }
 
-  const newUser = new User({ userName, email, fullName, password });
+  let profilePhoto = {
+    imageUrl: null,
+    publicId: null,
+  };
+
+  if (req.file) {
+    const uploadedImage = await UploadImageToCloudinary(
+      req.file.buffer,
+      'user/profile-images',
+      `user-${Date.now()}`
+    );
+
+    profilePhoto = {
+      imageUrl: uploadedImage.secure_url,
+      publicId: uploadedImage.public_id,
+    };
+  }
+  console.log(email, fullName, password, profilePhoto);
+  const newUser = new User({
+    email,
+    fullName,
+    password,
+    profilePhoto,
+  });
+
   await newUser.save();
 
   const newRefreshToken = await newUser.generateRefreshToken();
@@ -40,7 +65,7 @@ export const register = asyncHandler(async (req, res) => {
   try {
     await sendMail({
       to: email,
-      subject: 'Welcome to HaiKareer',
+      subject: 'Welcome to HiKareers',
       html: `<!DOCTYPE html>
         <html>
         <body style="margin:0;padding:30px;background:#f5f7fa;font-family:Arial,sans-serif;">
@@ -51,7 +76,7 @@ export const register = asyncHandler(async (req, res) => {
                 <tr><td style="height:4px;background:#2563eb;"></td></tr>
                 <tr>
                 <td style="padding:40px 44px;">
-                    <p style="margin:0 0 32px;color:#2563eb;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">HaiKareer</p>
+                    <p style="margin:0 0 32px;color:#2563eb;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">HiKareers</p>
                     <h1 style="margin:0 0 14px;color:#111;font-size:26px;font-weight:700;line-height:1.3;">Welcome! Find your next opportunity.</h1>
                     <p style="margin:0 0 32px;color:#555;font-size:15px;line-height:1.7;">
                     We're glad you're here. Browse job listings matched to your skills and start applying today.
@@ -65,7 +90,7 @@ export const register = asyncHandler(async (req, res) => {
                 </tr>
                 <tr>
                 <td style="padding:20px 44px;border-top:1px solid #f0f0f0;">
-                    <p style="margin:0;color:#aaa;font-size:12px;">© 2025 HaiKareer · All rights reserved</p>
+                    <p style="margin:0;color:#aaa;font-size:12px;">© 2025 HiKareers · All rights reserved</p>
                 </td>
                 </tr>
             </table>
@@ -91,6 +116,7 @@ export const register = asyncHandler(async (req, res) => {
 
 export const login = asyncHandler(async (req, res) => {
   const { userName, email, password } = req.body;
+
   console.log('Logging in user:', userName || email);
 
   if (!(userName || email)) {
@@ -101,9 +127,10 @@ export const login = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Password is required');
   }
 
-  const user = await User.findOne({
-    $or: [{ userName }, { email }],
-  });
+  // Build query safely
+  const query = userName ? { userName } : { email };
+
+  const user = await User.findOne(query);
 
   if (!user) {
     throw new ApiError(404, 'User does not exist');
@@ -119,6 +146,7 @@ export const login = asyncHandler(async (req, res) => {
   const refreshToken = await user.generateRefreshToken();
 
   user.refreshToken = refreshToken;
+
   await user.save({ validateBeforeSave: false });
 
   const loggedInUser = await User.findById(user._id).select(

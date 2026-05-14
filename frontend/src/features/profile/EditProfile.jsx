@@ -253,7 +253,7 @@ export default function EditProfile() {
       />
 
       {error && <div className="alert alert-error">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
+      {success && <div className="alert alert-success mt-4">{success}</div>}
 
       <BasicInfoSection
         user={user}

@@ -25,14 +25,6 @@ const resume = mongoose.Schema(
 
 const userSchema = mongoose.Schema(
   {
-    userName: {
-      type: String,
-      required: true,
-      lowercase: true,
-      unique: true,
-      trim: true,
-      index: true,
-    },
     email: {
       type: String,
       required: true,
@@ -49,7 +41,6 @@ const userSchema = mongoose.Schema(
     fullName: {
       type: String,
       required: true,
-      lowercase: true,
       trim: true,
     },
     password: {
@@ -182,7 +173,6 @@ userSchema.methods.generateRefreshToken = async function () {
   const payload = {
     _id: this._id,
     email: this.email,
-    userName: this.userName,
   };
 
   const options = {
@@ -203,7 +193,6 @@ userSchema.methods.generateAccessToken = async function () {
   const payload = {
     _id: this._id,
     email: this.email,
-    userName: this.userName,
   };
 
   const options = {
