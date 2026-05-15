@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { userAPI } from './api';
 import EmailVerificationDialog from './components/EmailVerificationDialog.jsx';
 import MobileVerificationDialog from './components/MobileVerificationDialog.jsx';
-
+import { Pencil } from 'lucide-react';
 const EMPTY_QUALIFICATIONS = {
   tenth: {
     startYear: '',
@@ -103,7 +103,7 @@ export default function EditProfile() {
 
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [showMobileDialog, setShowMobileDialog] = useState(false);
-
+  const [closeEducationForm, setCloseEducationForm] = useState(false);
   useEffect(() => {
     loadProfile();
   }, []);
@@ -176,7 +176,7 @@ export default function EditProfile() {
         qualifications,
         original: originalUser,
       });
-      console.log(payload);
+
       if (!Object.keys(payload).length) {
         setSuccess('No changes to apply');
         setSaving(false);
@@ -184,11 +184,16 @@ export default function EditProfile() {
       }
 
       const res = await userAPI.updateProfile(payload);
+
       if (res.success) {
         setSuccess('Profile updated successfully!');
 
+        setCloseEducationForm(true);
+
         await loadProfile();
-      } else setError(res.message || 'Update failed');
+      } else {
+        setError(res.message || 'Update failed');
+      }
     } catch (e) {
       setError(e.response?.data?.message || 'Update failed');
     } finally {
@@ -276,8 +281,10 @@ export default function EditProfile() {
         setHighestQualification={setHighestQualification}
         qualifications={qualifications}
         onQualificationChange={onQualificationChange}
+        user={user}
+        closeEducationForm={closeEducationForm}
+        setCloseEducationForm={setCloseEducationForm}
       />
-
       <div className="mt-4">
         <button
           onClick={saveProfile}
@@ -296,78 +303,225 @@ function EducationSection({
   setHighestQualification,
   qualifications,
   onQualificationChange,
+  user,
+  closeEducationForm,
+  setCloseEducationForm,
 }) {
   const LEVELS = ['tenth', 'twelfth', 'graduation', 'postgraduation'];
+
+  const LABELS = {
+    tenth: '10th Standard',
+    twelfth: '12th Standard',
+    graduation: 'Graduation',
+    postgraduation: 'Post Graduation',
+  };
+
   const [selectedEducation, setSelectedEducation] = useState('');
+
+  const formRef = React.useRef(null);
+
+  useEffect(() => {
+    if (closeEducationForm) {
+      setSelectedEducation('');
+      setCloseEducationForm(false);
+    }
+  }, [closeEducationForm]);
+
   const visibleIndex = LEVELS.indexOf(selectedEducation);
 
   const current =
-    visibleIndex >= 0 ? qualifications[LEVELS[visibleIndex]] || {} : {};
+    visibleIndex >= 0
+      ? qualifications[LEVELS[visibleIndex]] ||
+        user?.qualifications?.[LEVELS[visibleIndex]] ||
+        {}
+      : {};
 
   const scoreType = current?.scoreType || 'percentage';
+
+  let availableLevels = [];
+
+  if (user?.qualifications) {
+    availableLevels = LEVELS.filter(
+      (level) => user.qualifications[level]?.startYear !== null
+    );
+  }
+
+  const renderBlock = (title, data, level) => {
+    if (!data || typeof data !== 'object') return null;
+
+    return (
+      <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-xl">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-neutral-900">{title}</h3>
+
+          <button
+            type="button"
+            className="bg-gray-200 px-3 py-1 rounded-md text-sm"
+            onClick={() => {
+              setSelectedEducation(level);
+
+              setTimeout(() => {
+                formRef.current?.scrollIntoView({
+                  behavior: 'smooth',
+                  block: 'start',
+                });
+              }, 100);
+            }}
+          >
+            Edit
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {Object.entries(data).map(([key, value]) => {
+            if (key === 'completed') return null;
+
+            if (key === 'cgpa' && data.percentage) return null;
+
+            if (key === 'percentage' && data.cgpa) return null;
+
+            return (
+              <div key={key}>
+                <label className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
+                  {key === 'cgpa'
+                    ? 'CGPA'
+                    : key === 'percentage'
+                      ? 'Percentage'
+                      : key}
+                </label>
+
+                <p className="text-neutral-900 mt-1">
+                  {value ? String(value) : '-'}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="card">
       <h2 className="text-xl font-semibold mb-6">Education Details</h2>
 
-      <div className="mb-8">
-        <label className="label">Highest Qualification *</label>
+      {/* Existing Education Blocks */}
+      <div className="space-y-6">
+        {availableLevels?.length > 0 ? (
+          availableLevels.map((level) =>
+            renderBlock(LABELS[level], user.qualifications[level], level)
+          )
+        ) : (
+          <p className="text-neutral-500">No education details available.</p>
+        )}
+      </div>
+
+      {/* Add Education Dropdown */}
+      <div className="mb-8 mt-5">
+        <label className="label">Add Education</label>
+
         <select
-          value={highestQualification}
+          value={selectedEducation}
           onChange={(e) => {
             setSelectedEducation(e.target.value);
+
             if (
               LEVELS.indexOf(e.target.value) >
               LEVELS.indexOf(highestQualification)
             ) {
               setHighestQualification(e.target.value);
             }
+
+            setTimeout(() => {
+              formRef.current?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+              });
+            }, 100);
           }}
           className="input"
         >
-          <option value="">Select your highest qualification</option>
-          <option value="tenth">10th Standard</option>
-          <option value="twelfth">12th Standard</option>
-          <option value="graduation">Graduation</option>
-          <option value="postgraduation">Post Graduation</option>
+          <option value="">Select Qualification</option>
+
+          {LEVELS.filter((level) => !availableLevels?.includes(level)).map(
+            (level) => (
+              <option key={level} value={level}>
+                {LABELS[level]}
+              </option>
+            )
+          )}
         </select>
       </div>
 
-      {visibleIndex >= 0 &&
-        Object.keys(current).map((field) => {
-          if (
-            field === 'cgpa' ||
-            field === 'percentage' ||
-            field === 'scoreType' ||
-            field === 'completed'
-          )
-            return null;
+      {/* Form */}
+      <div ref={formRef}>
+        {visibleIndex >= 0 &&
+          Object.keys(current).map((field) => {
+            if (
+              field === 'cgpa' ||
+              field === 'percentage' ||
+              field === 'scoreType' ||
+              field === 'completed'
+            )
+              return null;
 
-          if (field === 'startYear' || field === 'endYear') {
-            const currentYear = new Date().getFullYear();
-            const startYear = Number(current?.startYear) || 0;
-            const endYear = Number(current?.endYear) || 0;
+            if (field === 'startYear' || field === 'endYear') {
+              const currentYear = new Date().getFullYear();
 
-            let error = '';
-            if (field === 'startYear') {
-              if (current?.startYear && startYear > currentYear)
-                error = `Start year cannot be greater than ${currentYear}`;
-              if (current?.startYear && endYear && startYear > endYear)
-                error = 'Start year cannot be after end year';
-            }
-            if (field === 'endYear') {
-              if (current?.endYear && startYear && endYear < startYear)
-                error = 'End year cannot be before start year';
+              const startYear = Number(current?.startYear) || 0;
+
+              const endYear = Number(current?.endYear) || 0;
+
+              let error = '';
+
+              if (field === 'startYear') {
+                if (current?.startYear && startYear > currentYear)
+                  error = `Start year cannot be greater than ${currentYear}`;
+
+                if (current?.startYear && endYear && startYear > endYear)
+                  error = 'Start year cannot be after end year';
+              }
+
+              if (field === 'endYear') {
+                if (current?.endYear && startYear && endYear < startYear)
+                  error = 'End year cannot be before start year';
+              }
+
+              return (
+                <div key={field}>
+                  <label className="label">
+                    {field === 'startYear' ? 'Start Year' : 'End Year'}
+
+                    <span className="text-red-600 ml-1">*</span>
+                  </label>
+
+                  <input
+                    type="number"
+                    value={current?.[field] || ''}
+                    onChange={(e) =>
+                      onQualificationChange(
+                        LEVELS[visibleIndex],
+                        field,
+                        e.target.value
+                      )
+                    }
+                    className="input"
+                  />
+
+                  {error && <p className="text-red-500 text-sm">{error}</p>}
+                </div>
+              );
             }
 
             return (
               <div key={field}>
                 <label className="label">
-                  {field === 'startYear' ? 'Start Year' : 'End Year'}
+                  {field}
+
                   <span className="text-red-600 ml-1">*</span>
                 </label>
+
                 <input
-                  type="number"
                   value={current?.[field] || ''}
                   onChange={(e) =>
                     onQualificationChange(
@@ -378,103 +532,91 @@ function EducationSection({
                   }
                   className="input"
                 />
-                {error && <p className="text-red-500 text-sm">{error}</p>}
               </div>
             );
-          }
+          })}
 
-          return (
-            <div key={field}>
-              <label className="label">
-                {field}
-                <span className="text-red-600 ml-1">*</span>
-              </label>
+        {/* Score Section */}
+        {visibleIndex >= 0 && (
+          <div>
+            <label className="label">
+              {scoreType === 'cgpa' ? 'CGPA' : 'Percentage'}
+
+              <span className="text-red-600 ml-1">*</span>
+            </label>
+
+            <div className="flex items-center gap-3">
               <input
-                value={current?.[field] || ''}
+                type="number"
+                min={0}
+                max={scoreType === 'cgpa' ? 10 : 100}
+                value={current?.[scoreType] || ''}
                 onChange={(e) =>
                   onQualificationChange(
                     LEVELS[visibleIndex],
-                    field,
+                    scoreType,
                     e.target.value
                   )
                 }
                 className="input"
               />
-            </div>
-          );
-        })}
 
-      {visibleIndex >= 0 && (
-        <div>
-          <label className="label">
-            {scoreType === 'cgpa' ? 'CGPA' : 'Percentage'}
-            <span className="text-red-600 ml-1">*</span>
-          </label>
+              <div className="flex gap-3">
+                {['percentage', 'cgpa'].map((type) => (
+                  <label
+                    key={type}
+                    className="flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                  >
+                    <input
+                      type="radio"
+                      name="scoreType"
+                      value={type}
+                      checked={scoreType === type}
+                      onChange={(e) => {
+                        const value = e.target.value;
 
-          <div className="flex items-center gap-3">
-            <input
-              type="number"
-              min={0}
-              max={scoreType === 'cgpa' ? 10 : 100}
-              value={current?.[scoreType] || ''}
-              onChange={(e) =>
-                onQualificationChange(
-                  LEVELS[visibleIndex],
-                  scoreType,
-                  e.target.value
-                )
-              }
-              className="input"
-            />
-
-            <div className="flex gap-3">
-              {['percentage', 'cgpa'].map((type) => (
-                <label
-                  key={type}
-                  className="flex items-center gap-1 cursor-pointer whitespace-nowrap"
-                >
-                  <input
-                    type="radio"
-                    name="scoreType"
-                    value={type}
-                    checked={scoreType === type}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      onQualificationChange(
-                        LEVELS[visibleIndex],
-                        'scoreType',
-                        value
-                      );
-                      if (value === 'cgpa') {
                         onQualificationChange(
                           LEVELS[visibleIndex],
-                          'percentage',
-                          ''
+                          'scoreType',
+                          value
                         );
-                      } else {
-                        onQualificationChange(LEVELS[visibleIndex], 'cgpa', '');
-                      }
-                    }}
-                  />
-                  {type === 'percentage' ? 'Percentage' : 'CGPA'}
-                </label>
-              ))}
+
+                        if (value === 'cgpa') {
+                          onQualificationChange(
+                            LEVELS[visibleIndex],
+                            'percentage',
+                            ''
+                          );
+                        } else {
+                          onQualificationChange(
+                            LEVELS[visibleIndex],
+                            'cgpa',
+                            ''
+                          );
+                        }
+                      }}
+                    />
+
+                    {type === 'percentage' ? 'Percentage' : 'CGPA'}
+                  </label>
+                ))}
+              </div>
             </div>
+
+            {scoreType === 'cgpa' && current?.cgpa > 10 && (
+              <p className="text-red-500 text-sm">
+                CGPA cannot be greater than 10
+              </p>
+            )}
+
+            {scoreType === 'percentage' && current?.percentage > 100 && (
+              <p className="text-red-500 text-sm">
+                Percentage cannot be greater than 100
+              </p>
+            )}
           </div>
-
-          {scoreType === 'cgpa' && current?.cgpa > 10 && (
-            <p className="text-red-500 text-sm">
-              CGPA cannot be greater than 10
-            </p>
-          )}
-
-          {scoreType === 'percentage' && current?.percentage > 100 && (
-            <p className="text-red-500 text-sm">
-              Percentage cannot be greater than 100
-            </p>
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

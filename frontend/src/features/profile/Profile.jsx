@@ -67,7 +67,6 @@ function BasicInfoSection({ user }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Info label="Full Name" value={user?.fullName} />
-        <Info label="Username" value={user?.userName} />
 
         <div>
           <label className="text-xs font-medium text-neutral-500 uppercase tracking-wide">

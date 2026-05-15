@@ -40,7 +40,7 @@ function AppContent() {
   const resumes = user?.resumes?.['1'] ? [user.resumes['1']] : [];
 
   return (
-    <ProfileCompletionProvider>
+    <ProfileCompletionProvider user={user}>
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header />
 
