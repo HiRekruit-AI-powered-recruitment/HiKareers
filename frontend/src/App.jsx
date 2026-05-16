@@ -33,6 +33,7 @@ import PrivacyPolicy from './FooterPages/PrivacyPolicy';
 import TermsofService from './FooterPages/TermsofService';
 import CookiePolicy from './FooterPages/CookiePolicy';
 import MockInterview from './features/mockInterview/MockInterview';
+import EmployerDashboard from './features/Employers/EmployerDashboard';
 
 function AppContent() {
   const { user } = useAuth();
@@ -160,6 +161,7 @@ function AppContent() {
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsofService />} />
             <Route path="/cookies" element={<CookiePolicy />} />
+            <Route path="/employer-dashboard" element={<EmployerDashboard />} />
           </Routes>
         </main>
 
