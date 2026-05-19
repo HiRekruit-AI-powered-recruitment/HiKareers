@@ -5,6 +5,8 @@ import {
   login,
   logout,
   refreshAccessToken,
+  forgetPassword,
+  resetPassword,
 } from '../controllers/auth.controller.js';
 
 import verifyUser from '../middlewares/Auth.middleware.js';
@@ -22,5 +24,8 @@ router.post('/refresh-token', refreshAccessToken);
 
 // Protected routes
 router.post('/logout', verifyUser, logout);
+
+router.post('/forgot-password', forgetPassword);
+router.post('/reset-password/:token', resetPassword);
 
 export default router;

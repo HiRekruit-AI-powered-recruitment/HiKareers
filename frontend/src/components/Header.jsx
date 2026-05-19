@@ -7,6 +7,7 @@ import {
   FileText,
   LogOut,
   ChevronDown,
+  Bookmark,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/hikareers_logo.png';
@@ -144,7 +145,15 @@ export function Header() {
                         <span className="text-sm">My Applications</span>
                       </a>
                     )}
-
+                    {!isAdmin && (
+                      <a
+                        href="/saved-jobs"
+                        className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <Bookmark className="w-4 h-4" />
+                        <span className="text-sm">Saved Jobs</span>
+                      </a>
+                    )}
                     <hr className="my-1 border-gray-200" />
                     <button
                       onClick={handleLogout}

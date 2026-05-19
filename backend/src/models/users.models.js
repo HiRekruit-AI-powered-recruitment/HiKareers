@@ -131,6 +131,14 @@ const userSchema = mongoose.Schema(
       },
     },
     refreshToken: String,
+    passwordResetToken: String,
+    passwordResetExpiry: Date,
+    savedJobs: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Job',
+      },
+    ],
   },
   { timestamps: true }
 );

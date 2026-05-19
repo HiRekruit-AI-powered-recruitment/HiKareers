@@ -34,6 +34,9 @@ import TermsofService from './FooterPages/TermsofService';
 import CookiePolicy from './FooterPages/CookiePolicy';
 import MockInterview from './features/mockInterview/MockInterview';
 import EmployerDashboard from './features/Employers/EmployerDashboard';
+import ForgotPassword from './features/auth/ForgotPassword';
+import ResetPassword from './features/auth/ResetPassword';
+import SavedJobs from './features/jobs/SavedJobs';
 
 function AppContent() {
   const { user } = useAuth();
@@ -92,6 +95,15 @@ function AppContent() {
               element={
                 <ProtectedRoute>
                   <Applications />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/saved-jobs"
+              element={
+                <ProtectedRoute>
+                  <SavedJobs />
                 </ProtectedRoute>
               }
             />
@@ -162,6 +174,8 @@ function AppContent() {
             <Route path="/terms" element={<TermsofService />} />
             <Route path="/cookies" element={<CookiePolicy />} />
             <Route path="/employer-dashboard" element={<EmployerDashboard />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
           </Routes>
         </main>
 

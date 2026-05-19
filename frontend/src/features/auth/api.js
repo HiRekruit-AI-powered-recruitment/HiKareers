@@ -18,7 +18,7 @@ export const authAPI = {
     handleRequest(client.post('/auth/forgot-password', { email })),
 
   resetPassword: (token, password) =>
-    handleRequest(client.post('/auth/reset-password', { token, password })),
+    handleRequest(client.post(`/auth/reset-password/${token}`, { password })),
 
   verifyEmail: (token) =>
     handleRequest(client.post('/auth/verify-email', { token })),
