@@ -267,7 +267,7 @@ export const forgetPassword = asyncHandler(async (req, res) => {
   user.passwordResetExpiry = Date.now() + 10 * 60 * 1000;
 
   await user.save({ validateBeforeSave: false });
-  const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
+  const resetUrl = `https://careers.hirekruit.com/${resetToken}`;
 
   await sendMail({
     to: user.email,
