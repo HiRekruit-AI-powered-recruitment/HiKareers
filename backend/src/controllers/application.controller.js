@@ -454,7 +454,9 @@ export const getJobApplications = asyncHandler(async (req, res) => {
 // Update application status (HR use)
 export const updateApplicationStatus = asyncHandler(async (req, res) => {
   const { applicationId } = req.params;
+
   const { newStatus, rejectionReason } = req.body;
+
   const updatedBy = req.user._id;
 
   const validStatuses = [
@@ -473,7 +475,9 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Valid status is required');
   }
 
-  const application = await Application.findById(applicationId);
+  const application = await Application.findById(applicationId)
+    .populate('userId')
+    .populate('jobId');
   if (!application) {
     throw new ApiError(404, 'Application not found');
   }
@@ -481,19 +485,124 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
   // Update status
   application.currentStatus = newStatus;
 
-  // Add rejection reason if status is REJECTED
+  // Save rejection reason
   if (newStatus === 'REJECTED' && rejectionReason) {
     application.rejectionReason = rejectionReason;
   }
 
-  // Add to status logs
+  // Status logs
   application.statusLogs.push({
     status: newStatus,
     updatedAt: new Date(),
-    updatedBy: updatedBy,
+    updatedBy,
   });
 
   await application.save();
+
+  const userEmail = application.email;
+
+  const userName = application.fullName || 'Candidate';
+
+  const jobTitle = application.jobId?.title || 'Job Role';
+  console.log(rejectionReason);
+  const companyName = application.jobId?.company || 'Company';
+  if (newStatus === 'SHORTLISTED') {
+    await sendMail({
+      to: userEmail,
+
+      subject: 'Congratulations! You have been shortlisted',
+
+      html: `
+          <div style="font-family: Arial, sans-serif; padding: 20px;">
+            <h2 style="color:#2563eb;">
+              Congratulations ${userName} 
+            </h2>
+
+            <p>
+              You have been shortlisted for the role of
+              <strong>${jobTitle}</strong>
+              at
+              <strong>${companyName}</strong>.
+            </p>
+
+            <p>
+              Our team will contact you soon regarding
+              the next steps in the hiring process.
+            </p>
+
+            <br />
+
+            <p>
+              Best wishes,
+              <br />
+              ${companyName}
+            </p>
+          </div>
+        `,
+    });
+  }
+
+  if (newStatus === 'REJECTED') {
+    await sendMail({
+      to: userEmail,
+
+      subject: 'Application Status Update',
+
+      html: `
+          <div style="font-family: Arial, sans-serif; padding: 20px;">
+            <h2 style="color:#dc2626;">
+              Application Update
+            </h2>
+
+            <p>
+              Hello ${userName},
+            </p>
+
+            <p>
+              Thank you for applying for the role of
+              <strong>${jobTitle}</strong>
+              at
+              <strong>${companyName}</strong>.
+            </p>
+
+            <p>
+              After careful consideration,
+              we regret to inform you that
+              your application was not selected.
+            </p>
+
+            ${
+              rejectionReason
+                ? `
+                <div style="
+                  background:#f3f4f6;
+                  padding:15px;
+                  border-radius:8px;
+                  margin-top:15px;
+                ">
+                  <strong>Reason:</strong>
+                  <p>${rejectionReason}</p>
+                </div>
+              `
+                : ''
+            }
+
+            <p style="margin-top:20px;">
+              We appreciate your interest and encourage
+              you to apply for future opportunities.
+            </p>
+
+            <br />
+
+            <p>
+              Best regards,
+              <br />
+              ${companyName}
+            </p>
+          </div>
+        `,
+    });
+  }
 
   return res
     .status(200)

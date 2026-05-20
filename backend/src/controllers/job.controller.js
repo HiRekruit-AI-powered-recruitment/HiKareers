@@ -81,7 +81,6 @@ export const createJob = asyncHandler(async (req, res) => {
     }
   }
 
-  console.log(matchedUsers);
   await sendBulkMails({
     users: matchedUsers,
     applyLink,
@@ -302,7 +301,6 @@ export const getAllResumes = asyncHandler(async (req, res) => {
 
 export const saveJob = asyncHandler(async (req, res) => {
   const { jobId } = req.params;
-  console.log(req.user);
   const user = await User.findById(req.user._id);
 
   if (!user.savedJobs.includes(jobId)) {

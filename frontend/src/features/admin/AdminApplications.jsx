@@ -10,7 +10,6 @@ import {
 import { adminAPI } from './api';
 import ApplicationTable from './components/ApplicationTable';
 
-// Status badge config — APPLIED is the implicit default, not a selectable option
 const STATUS_CONFIG = {
   APPLIED: {
     label: 'Applied',
@@ -145,7 +144,6 @@ function ApplicantRow({ app, onUpdateStatus }) {
 function CompanyCard({ companyName, applications, onUpdateStatus }) {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Tally by status
   const hired = applications.filter((a) => a.currentStatus === 'HIRED').length;
   const pending = applications.filter(
     (a) => !['HIRED', 'REJECTED', 'WITHDRAWN'].includes(a.currentStatus)
@@ -156,12 +154,10 @@ function CompanyCard({ companyName, applications, onUpdateStatus }) {
       className={`bg-white rounded-2xl border transition-all duration-300 overflow-hidden
             ${isOpen ? 'border-indigo-200 shadow-lg shadow-indigo-100/60' : 'border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300'}`}
     >
-      {/* Card Header */}
       <button
         onClick={() => setIsOpen((o) => !o)}
         className="w-full flex items-center gap-4 px-6 py-5 text-left group"
       >
-        {/* Company Icon */}
         <div
           className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors duration-200
                     ${isOpen ? 'bg-indigo-600' : 'bg-slate-100 group-hover:bg-indigo-50'}`}
@@ -171,7 +167,6 @@ function CompanyCard({ companyName, applications, onUpdateStatus }) {
           />
         </div>
 
-        {/* Company info */}
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-slate-900 text-base truncate">
             {companyName}
@@ -195,7 +190,6 @@ function CompanyCard({ companyName, applications, onUpdateStatus }) {
           </div>
         </div>
 
-        {/* Status pills summary (desktop) */}
         <div className="hidden md:flex items-center gap-2 flex-shrink-0">
           {['APPLIED', 'INTERVIEW', 'HIRED', 'WITHDRAWN'].map((s) => {
             const count = applications.filter(
@@ -214,7 +208,6 @@ function CompanyCard({ companyName, applications, onUpdateStatus }) {
           })}
         </div>
 
-        {/* Chevron */}
         <div
           className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300
                     ${isOpen ? 'bg-indigo-100 rotate-180' : 'bg-slate-100 group-hover:bg-slate-200'}`}
@@ -225,7 +218,6 @@ function CompanyCard({ companyName, applications, onUpdateStatus }) {
         </div>
       </button>
 
-      {/* Expandable applicant table */}
       <div
         className={`transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}
       >
@@ -268,6 +260,11 @@ export default function AdminApplications() {
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [selectedApplicationId, setSelectedApplicationId] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [pendingStatus, setPendingStatus] = useState('');
+  const [rejecting, setRejecting] = useState(false);
 
   useEffect(() => {
     loadApplications();
@@ -290,6 +287,17 @@ export default function AdminApplications() {
   }
 
   const handleUpdateStatus = async (appId, newStatus) => {
+    if (
+      typeof newStatus === 'string' &&
+      newStatus.trim().toUpperCase() === 'REJECTED'
+    ) {
+      setSelectedApplicationId(appId);
+      setPendingStatus(newStatus);
+      setRejectionReason('');
+      setShowRejectModal(true);
+      return;
+    }
+
     const originalApplications = [...applications];
     setApplications((prev) =>
       prev.map((app) =>
@@ -308,7 +316,45 @@ export default function AdminApplications() {
     }
   };
 
-  // Filter by search
+  async function confirmReject() {
+    if (!rejectionReason.trim()) {
+      alert('Please provide a rejection reason.');
+      return;
+    }
+
+    setRejecting(true);
+    const originalApplications = [...applications];
+    setApplications((prev) =>
+      prev.map((app) =>
+        app._id === selectedApplicationId
+          ? { ...app, currentStatus: pendingStatus }
+          : app
+      )
+    );
+
+    try {
+      const response = await adminAPI.updateApplicationStatus(
+        selectedApplicationId,
+        pendingStatus,
+        rejectionReason
+      );
+
+      if (!response.success) {
+        setApplications(originalApplications);
+        setRejecting(false);
+        return;
+      }
+
+      setShowRejectModal(false);
+      setRejectionReason('');
+      setSelectedApplicationId(null);
+      setPendingStatus('');
+    } catch (err) {
+      console.error('Failed to reject application:', err);
+      setRejecting(false);
+    }
+  }
+
   const filtered = applications.filter((app) => {
     const q = searchTerm.toLowerCase();
     return (
@@ -322,7 +368,6 @@ export default function AdminApplications() {
     );
   });
 
-  // Group by company
   const grouped = filtered.reduce((acc, app) => {
     const company =
       app.companyId?.name ||
@@ -342,7 +387,6 @@ export default function AdminApplications() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Page header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-900">
           All Job Applicants
@@ -370,7 +414,6 @@ export default function AdminApplications() {
         )}
       </div>
 
-      {/* Filters */}
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-6 flex flex-col md:flex-row gap-3 items-center">
         <div className="relative flex-1 w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -400,7 +443,6 @@ export default function AdminApplications() {
         </div>
       </div>
 
-      {/* Content */}
       {loading ? (
         <div className="flex items-center justify-center min-h-[40vh]">
           <div className="relative">
@@ -428,6 +470,43 @@ export default function AdminApplications() {
               onUpdateStatus={handleUpdateStatus}
             />
           ))}
+        </div>
+      )}
+
+      {/* Reject Modal */}
+      {showRejectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">
+              Reject Application
+            </h2>
+            <p className="text-gray-600 mb-4">
+              Please provide a reason for rejection.
+            </p>
+            <textarea
+              autoFocus
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              rows={5}
+              placeholder="Enter rejection reason..."
+              className="w-full border border-gray-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-red-500 resize-none"
+            />
+            <div className="flex justify-end gap-3 mt-5">
+              <button
+                onClick={() => setShowRejectModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmReject}
+                disabled={rejecting}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {rejecting ? 'Rejecting...' : 'Confirm Rejection'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

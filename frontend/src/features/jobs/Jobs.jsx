@@ -26,12 +26,17 @@ function FilterSection({ title, options, selected, onChange }) {
         className="flex items-center justify-between w-full text-left mb-3"
       >
         <h3 className="font-semibold text-gray-900">{title}</h3>
-        <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown
+          className={`w-5 h-5 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+        />
       </button>
       {isOpen && (
         <div className="space-y-2">
           {options.map((option) => (
-            <label key={option.value} className="flex items-center cursor-pointer group">
+            <label
+              key={option.value}
+              className="flex items-center cursor-pointer group"
+            >
               <input
                 type="checkbox"
                 checked={selected.includes(option.value)}
@@ -138,7 +143,11 @@ export default function Jobs() {
     setWorkModes([]);
   };
 
-  const activeFiltersCount = jobTypes.length + experienceLevels.length + techStacks.length + workModes.length;
+  const activeFiltersCount =
+    jobTypes.length +
+    experienceLevels.length +
+    techStacks.length +
+    workModes.length;
 
   // Client-side filtering
   const filteredJobs = jobs.filter((job) => {
@@ -154,7 +163,9 @@ export default function Jobs() {
       const searchLower = searchQuery.toLowerCase();
       const titleMatch = job.title?.toLowerCase().includes(searchLower);
       const companyMatch = job.company?.toLowerCase().includes(searchLower);
-      const skillsMatch = job.skills?.some((skill) => skill.toLowerCase().includes(searchLower));
+      const skillsMatch = job.skills?.some((skill) =>
+        skill.toLowerCase().includes(searchLower)
+      );
 
       if (!titleMatch && !companyMatch && !skillsMatch) {
         return false;
@@ -162,7 +173,10 @@ export default function Jobs() {
     }
 
     // Location filtering
-    if (locationQuery && !job.location?.toLowerCase().includes(locationQuery.toLowerCase())) {
+    if (
+      locationQuery &&
+      !job.location?.toLowerCase().includes(locationQuery.toLowerCase())
+    ) {
       return false;
     }
 
@@ -197,11 +211,27 @@ export default function Jobs() {
     navigate(`/apply/${jobId}`);
   };
 
-  const handleSave = (jobId) => {
-    if (savedJobs.includes(jobId)) {
-      setSavedJobs(savedJobs.filter((id) => id !== jobId));
-    } else {
-      setSavedJobs([...savedJobs, jobId]);
+  const handleSave = async (jobId) => {
+    try {
+      if (savedJobs.includes(jobId)) {
+        const response = await jobAPI.removeJob(jobId);
+
+        if (!response.success) {
+          return;
+        }
+
+        setSavedJobs((prev) => prev.filter((id) => id !== jobId));
+      } else {
+        const response = await jobAPI.saveJob(jobId);
+
+        if (!response.success) {
+          return;
+        }
+
+        setSavedJobs((prev) => [...prev, jobId]);
+      }
+    } catch (error) {
+      console.log(error);
     }
   };
 
@@ -210,7 +240,9 @@ export default function Jobs() {
       {/* Header Section */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">Find Your Dream Job</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-6">
+            Find Your Dream Job
+          </h1>
 
           {/* Search Bar */}
           <div className="flex flex-col md:flex-row gap-3">
@@ -249,12 +281,17 @@ export default function Jobs() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex gap-8">
           {/* Filters Sidebar */}
-          <aside className={`${showFilters ? 'block' : 'hidden'} md:block w-full md:w-80 flex-shrink-0`}>
+          <aside
+            className={`${showFilters ? 'block' : 'hidden'} md:block w-full md:w-80 flex-shrink-0`}
+          >
             <div className="bg-white rounded-lg border border-gray-200 p-6 sticky top-24">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
                 {activeFiltersCount > 0 && (
-                  <button onClick={clearAllFilters} className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                  <button
+                    onClick={clearAllFilters}
+                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  >
                     Clear all
                   </button>
                 )}
@@ -265,19 +302,25 @@ export default function Jobs() {
                   title="Job Type"
                   options={filterOptions.jobTypes}
                   selected={jobTypes}
-                  onChange={(value) => toggleFilter(jobTypes, setJobTypes, value)}
+                  onChange={(value) =>
+                    toggleFilter(jobTypes, setJobTypes, value)
+                  }
                 />
                 <FilterSection
                   title="Experience Level"
                   options={filterOptions.experienceLevels}
                   selected={experienceLevels}
-                  onChange={(value) => toggleFilter(experienceLevels, setExperienceLevels, value)}
+                  onChange={(value) =>
+                    toggleFilter(experienceLevels, setExperienceLevels, value)
+                  }
                 />
                 <FilterSection
                   title="Work Mode"
                   options={filterOptions.workModes}
                   selected={workModes}
-                  onChange={(value) => toggleFilter(workModes, setWorkModes, value)}
+                  onChange={(value) =>
+                    toggleFilter(workModes, setWorkModes, value)
+                  }
                 />
               </div>
             </div>
@@ -299,7 +342,9 @@ export default function Jobs() {
             {!loading && error && (
               <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 mb-6">
                 <p>{error}</p>
-                <button onClick={fetchJobs} className="mt-2 text-sm underline">Try again</button>
+                <button onClick={fetchJobs} className="mt-2 text-sm underline">
+                  Try again
+                </button>
               </div>
             )}
 
@@ -307,8 +352,13 @@ export default function Jobs() {
               <>
                 <div className="mb-6 flex items-center justify-between">
                   <p className="text-gray-600">
-                    Showing <span className="font-semibold text-gray-900">{filteredJobs.length}</span> of{' '}
-                    <span className="font-semibold text-gray-900">{total}</span> jobs
+                    Showing{' '}
+                    <span className="font-semibold text-gray-900">
+                      {filteredJobs.length}
+                    </span>{' '}
+                    of{' '}
+                    <span className="font-semibold text-gray-900">{total}</span>{' '}
+                    jobs
                   </p>
                 </div>
 
@@ -327,7 +377,9 @@ export default function Jobs() {
                     <div className="text-center py-16 bg-white rounded-lg border border-gray-200">
                       <Briefcase className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        {jobs.length === 0 ? 'No jobs posted yet' : 'No matching jobs found'}
+                        {jobs.length === 0
+                          ? 'No jobs posted yet'
+                          : 'No matching jobs found'}
                       </h3>
                       <p className="text-gray-600 mb-4">
                         {jobs.length === 0

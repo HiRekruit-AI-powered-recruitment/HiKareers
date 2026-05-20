@@ -94,17 +94,6 @@ export function Header() {
           <div className="hidden md:flex items-center gap-3">
             {loggedIn ? (
               <>
-                {!isAdmin && (
-                  <button
-                    onClick={
-                      isAdmin ? () => navigate('/admin/jobs/new') : handleApply
-                    }
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-                  >
-                    Apply for Job
-                  </button>
-                )}
-
                 {/* User Menu */}
                 <div className="relative group">
                   <button className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">

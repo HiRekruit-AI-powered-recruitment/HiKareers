@@ -76,7 +76,6 @@ export function ProfileCompletionProvider({ user, children }) {
         incompleteSections: [],
       };
     }
-    console.log(user);
     const basicInfoScore = calcBasicInfoScore(user);
 
     const resumeScore = calcResumeScore(user);

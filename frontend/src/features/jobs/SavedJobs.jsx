@@ -1,8 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import {
+  Briefcase,
+  MapPin,
+  Clock,
+  IndianRupee,
+  Building2,
+  BookmarkCheck,
+  Calendar,
+} from 'lucide-react';
+
+import { jobAPI } from '../../features/applications/api';
 
 function SavedJobs() {
+  const navigate = useNavigate();
+
   const [savedJobs, setSavedJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -15,18 +27,18 @@ function SavedJobs() {
     try {
       setLoading(true);
 
-      const response = await axios.get(
-        'http://localhost:8000/api/jobs/get-saved-jobs',
-        {
-          withCredentials: true,
-        }
-      );
+      const response = await jobAPI.getSavedJobs();
 
-      setSavedJobs(response.data.data);
+      if (!response.success) {
+        setError(response.message || 'Failed to fetch saved jobs');
+        return;
+      }
+
+      setSavedJobs(response.data || []);
     } catch (error) {
       console.log(error);
 
-      setError(error?.response?.data?.message || 'Failed to fetch saved jobs');
+      setError('Failed to fetch saved jobs');
     } finally {
       setLoading(false);
     }
@@ -34,18 +46,18 @@ function SavedJobs() {
 
   async function removeSavedJob(jobId) {
     try {
-      await axios.post(
-        `http://localhost:8000/api/jobs/remove-job/${jobId}`,
-        {},
-        {
-          withCredentials: true,
-        }
-      );
+      const response = await jobAPI.removeJob(jobId);
+
+      if (!response.success) return;
 
       setSavedJobs((prev) => prev.filter((job) => job._id !== jobId));
     } catch (error) {
       console.log(error);
     }
+  }
+
+  function handleApply(jobId) {
+    navigate(`/apply/${jobId}`);
   }
 
   if (loading) {
@@ -57,59 +69,156 @@ function SavedJobs() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen bg-gray-50 py-10 px-4">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Saved Jobs</h1>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Saved Jobs</h1>
 
-        {error && <p className="text-red-500 mb-4">{error}</p>}
+          <p className="text-gray-500 mt-2">
+            Manage your bookmarked opportunities
+          </p>
+        </div>
+
+        {error && (
+          <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg mb-5">
+            {error}
+          </div>
+        )}
 
         {savedJobs.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-10 text-center">
-            <h2 className="text-xl font-semibold mb-2">No Saved Jobs</h2>
+          <div className="bg-white rounded-xl border border-gray-200 p-10 text-center">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+              No Saved Jobs
+            </h2>
 
-            <p className="text-gray-500">Jobs you save will appear here.</p>
+            <p className="text-gray-500">Jobs you bookmark will appear here.</p>
           </div>
         ) : (
-          <div className="grid gap-5">
+          <div className="grid gap-6">
             {savedJobs.map((job) => (
               <div
                 key={job._id}
-                className="bg-white rounded-xl shadow-md p-5 border"
+                className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow"
               >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h2 className="text-2xl font-semibold text-gray-800">
-                      {job.title}
-                    </h2>
-
-                    <p className="text-gray-600 mt-1">{job.companyName}</p>
-
-                    <div className="flex gap-4 mt-3 text-sm text-gray-500">
-                      <span>📍 {job.location}</span>
-
-                      <span>💼 {job.jobType}</span>
-
-                      <span>💰 ₹{job.salary}</span>
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex gap-4">
+                    <div className="w-14 h-14 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Building2 className="w-7 h-7 text-blue-600" />
                     </div>
 
-                    <p className="mt-4 text-gray-700 line-clamp-2">
-                      {job.description}
-                    </p>
+                    <div className="flex-1">
+                      <h3
+                        onClick={() => navigate(`/jobs/${job._id}`)}
+                        className="text-xl font-semibold text-gray-900 mb-1 hover:text-blue-600 cursor-pointer transition-colors"
+                      >
+                        {job.title}
+                      </h3>
+
+                      <p className="text-gray-600 font-medium mb-2">
+                        {job.company || job.companyName}
+                      </p>
+
+                      <div className="flex flex-wrap gap-3 text-sm text-gray-600">
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-4 h-4" />
+                          {job.location}
+                        </span>
+
+                        {(job.jobType || job.type) && (
+                          <span className="flex items-center gap-1">
+                            <Briefcase className="w-4 h-4" />
+                            {job.jobType || job.type}
+                          </span>
+                        )}
+
+                        {(job.experienceLevel || job.experience) && (
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-4 h-4" />
+                            {job.experienceLevel || job.experience}
+                          </span>
+                        )}
+
+                        {job.salary && (
+                          <span className="flex items-center gap-1">
+                            <IndianRupee className="w-4 h-4" />
+                            {job.salary}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="flex flex-col gap-3">
-                    <Link
-                      to={`/jobs/${job._id}`}
-                      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-center"
-                    >
-                      View Job
-                    </Link>
+                  <button
+                    onClick={() => removeSavedJob(job._id)}
+                    className="p-2 hover:bg-gray-50 rounded-lg transition-colors"
+                    aria-label="Remove saved job"
+                  >
+                    <BookmarkCheck className="w-5 h-5 text-blue-600 fill-blue-600" />
+                  </button>
+                </div>
+
+                <p className="text-gray-700 mb-4 line-clamp-2">
+                  {job.description}
+                </p>
+
+                {job.skills && job.skills.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {job.skills.slice(0, 5).map((skill, index) => (
+                      <span
+                        key={index}
+                        className="px-3 py-1 bg-blue-50 text-blue-700 text-sm rounded-full font-medium"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+
+                    {job.skills.length > 5 && (
+                      <span className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full font-medium">
+                        +{job.skills.length - 5} more
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm text-gray-500">
+                      {job.createdAt
+                        ? `Posted ${new Date(job.createdAt).toLocaleDateString(
+                            'en-US',
+                            {
+                              month: 'short',
+                              day: 'numeric',
+                            }
+                          )}`
+                        : ''}
+                    </span>
+
+                    {job.endDate && (
+                      <span className="flex items-center gap-1 text-sm text-red-600 font-medium">
+                        <Calendar className="w-4 h-4" />
+                        Apply by{' '}
+                        {new Date(job.endDate).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    {job.numberOfPositions && (
+                      <span className="text-sm text-blue-600 font-medium">
+                        {job.numberOfPositions} Positions
+                      </span>
+                    )}
 
                     <button
-                      onClick={() => removeSavedJob(job._id)}
-                      className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                      onClick={() => handleApply(job._id)}
+                      className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
                     >
-                      Remove
+                      Apply Now
                     </button>
                   </div>
                 </div>
