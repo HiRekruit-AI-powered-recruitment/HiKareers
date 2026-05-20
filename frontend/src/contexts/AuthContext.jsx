@@ -118,6 +118,38 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const forgetPassword = async (email) => {
+    try {
+      const response = await authAPI.forgotPassword(email);
+
+      return response;
+    } catch (err) {
+      console.log(err);
+
+      return {
+        success: false,
+        message:
+          err.response?.data?.message ||
+          err.message ||
+          'Failed to send reset link',
+      };
+    }
+  };
+  const resetPassword = async (token, password) => {
+    try {
+      const response = await authAPI.resetPassword(token, password);
+
+      return response;
+    } catch (err) {
+      console.log(err);
+
+      return {
+        success: false,
+        message:
+          err.response?.data?.message || err.message || 'Password reset failed',
+      };
+    }
+  };
   const value = {
     user,
     isAuthenticated: !!user,
@@ -125,6 +157,8 @@ export const AuthProvider = ({ children }) => {
     login,
     signup,
     logout,
+    forgetPassword,
+    resetPassword,
   };
 
   return (

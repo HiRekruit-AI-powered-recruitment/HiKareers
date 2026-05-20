@@ -81,7 +81,6 @@ export const createJob = asyncHandler(async (req, res) => {
     }
   }
 
-  console.log(matchedUsers);
   await sendBulkMails({
     users: matchedUsers,
     applyLink,
@@ -298,4 +297,45 @@ export const getAllResumes = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, 'All resumes fetched successfully', allResumes));
+});
+
+export const saveJob = asyncHandler(async (req, res) => {
+  const { jobId } = req.params;
+  const user = await User.findById(req.user._id);
+
+  if (!user.savedJobs.includes(jobId)) {
+    user.savedJobs.push(jobId);
+
+    await user.save();
+  }
+
+  return res.status(200).json(new ApiResponse(200, 'Job saved successfully'));
+});
+
+export const removeSavedJob = asyncHandler(async (req, res) => {
+  const { jobId } = req.params;
+
+  const user = await User.findById(req.user._id);
+
+  user.savedJobs = user.savedJobs.filter((id) => id.toString() !== jobId);
+
+  await user.save();
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, 'Job removed from saved jobs'));
+});
+
+export const getAllSavedJobs = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).populate('savedJobs');
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        'All saved jobs retrieved successfully',
+        user.savedJobs
+      )
+    );
 });

@@ -33,8 +33,40 @@ export const sendEmailVerificationOtp = asyncHandler(async (req, res) => {
 
   await sendMail({
     to: email,
-    subject: 'Your Email Verification OTP',
-    html: `<p>Your OTP is: <strong>${otp}</strong></p>`,
+    subject: 'Verify Your Email - HiKareers',
+    html: `
+    <div style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 40px 20px;">
+      <div style="max-width: 500px; margin: auto; background: #ffffff; border-radius: 10px; padding: 30px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+        
+        <h2 style="color: #333;">Email Verification</h2>
+        
+        <p style="font-size: 16px; color: #555;">
+          Welcome to <strong>HiKareers</strong>
+        </p>
+
+        <p style="font-size: 15px; color: #666;">
+          Use the OTP below to verify your email address:
+        </p>
+
+        <div style="margin: 25px 0;">
+          <span style="display: inline-block; background: #2563eb; color: #fff; font-size: 32px; letter-spacing: 6px; padding: 14px 28px; border-radius: 8px; font-weight: bold;">
+            ${otp}
+          </span>
+        </div>
+
+        <p style="font-size: 14px; color: #777;">
+          This OTP is valid for 5 minutes.
+        </p>
+
+        <hr style="margin: 25px 0; border: none; border-top: 1px solid #eee;" />
+
+        <p style="font-size: 12px; color: #999;">
+          If you didn’t request this email, you can safely ignore it.
+        </p>
+
+      </div>
+    </div>
+  `,
   });
 
   res.status(200).json({

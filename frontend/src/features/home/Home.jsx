@@ -165,7 +165,7 @@ export default function Home() {
           <FeatureCard
             icon={Briefcase}
             title="Easy Application"
-            description="Apply to multiple jobs with one click using your HiKareers profile."
+            description="Apply for jobs with one click using your HiKareers profile."
             color="orange"
           />
           <FeatureCard
@@ -277,7 +277,10 @@ export default function Home() {
                   </span>
                 </li>
               </ul>
-              <button className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors">
+              <button
+                className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+                onClick={() => navigate('/interview')}
+              >
                 Try Mock Interview
               </button>
             </div>

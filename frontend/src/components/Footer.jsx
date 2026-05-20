@@ -106,14 +106,6 @@ export function Footer() {
             <ul className="space-y-2 text-sm">
               <li>
                 <a
-                  href={isAdmin ? '/admin/jobs/new' : '/post-job'}
-                  className="hover:text-white transition-colors"
-                >
-                  Post a Job
-                </a>
-              </li>
-              <li>
-                <a
                   href={isAdmin ? '/admin-dashboard' : '/employer-dashboard'}
                   className="hover:text-white transition-colors"
                 >

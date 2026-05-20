@@ -8,7 +8,6 @@ export default function Signup() {
   const { signup, isAuthenticated } = useAuth();
 
   const [form, setForm] = useState({
-    userName: '',
     fullName: '',
     email: '',
     password: '',
@@ -37,10 +36,6 @@ export default function Signup() {
 
     if (!form.fullName.trim()) {
       errors.fullName = 'Full name is required';
-    }
-
-    if (!form.userName.trim()) {
-      errors.userName = 'Username is required';
     }
 
     const email = form.email.trim();
@@ -106,7 +101,6 @@ export default function Signup() {
 
     try {
       const formData = new FormData();
-      formData.append('userName', form.userName);
       formData.append('fullName', form.fullName);
       formData.append('email', form.email);
       formData.append('password', form.password);
@@ -178,30 +172,6 @@ export default function Signup() {
             />
             {formErrors.fullName && (
               <p className="mt-1 text-sm text-red-600">{formErrors.fullName}</p>
-            )}
-          </div>
-
-          <div>
-            <label
-              htmlFor="userName"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Username
-            </label>
-            <input
-              id="userName"
-              type="text"
-              name="userName"
-              value={form.userName}
-              onChange={handleChange}
-              placeholder="johndoe"
-              className={`w-full px-4 py-2 border rounded-md ${
-                formErrors.userName ? 'border-red-500' : 'border-gray-300'
-              } focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
-              disabled={loading}
-            />
-            {formErrors.userName && (
-              <p className="mt-1 text-sm text-red-600">{formErrors.userName}</p>
             )}
           </div>
 

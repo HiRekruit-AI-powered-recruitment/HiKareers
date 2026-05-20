@@ -60,14 +60,13 @@ function HeaderSection({ onEdit, title = 'My Profile' }) {
 
 function BasicInfoSection({ user }) {
   return (
-    <div className="card">
+    <div className="card ">
       <h2 className="text-xl font-semibold mb-6 pb-4 border-b border-neutral-200">
         Basic Information
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Info label="Full Name" value={user?.fullName} />
-        <Info label="Username" value={user?.userName} />
 
         <div>
           <label className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
@@ -115,23 +114,19 @@ function ResumesSection({ resumes }) {
   return (
     <div className="card">
       <h2 className="text-xl font-semibold mb-6 pb-4 border-b border-neutral-200">
-        Resumes
+        Resume
       </h2>
 
       {hasAnyResume ? (
         <div className="space-y-4">
           {resumes.map((resume, index) => {
             if (!resume) return null;
-            console.log('Resume URL:', resume.url);
             return (
               <div
                 key={index}
                 className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-4 bg-neutral-50 border border-neutral-200 rounded-xl hover:border-neutral-300 hover:bg-neutral-100 transition"
               >
                 <div className="flex-1">
-                  <p className="font-medium text-neutral-900 mb-1">
-                    Resume {index + 1}
-                  </p>
                   <p className="text-sm text-neutral-600">
                     {resume.fileName || 'Resume PDF'}
                   </p>
@@ -217,17 +212,6 @@ function EducationSection({ user }) {
       <h2 className="text-xl font-semibold mb-6 pb-4 border-b border-neutral-200">
         Education Details
       </h2>
-
-      {user.highestQualification && (
-        <div className="mb-6 pb-6 border-b border-neutral-200">
-          <label className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
-            Highest Qualification
-          </label>
-          <p className="text-neutral-900 mt-2 font-medium capitalize text-lg">
-            {user.highestQualification}
-          </p>
-        </div>
-      )}
 
       <div className="space-y-6">
         {availableLevels.length > 0 ? (
@@ -400,7 +384,7 @@ export default function ProfilePage() {
   const isAdmin = user?.userType === 'admin';
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-12 px-4">
+    <div className="max-w-4xl mx-auto space-y-6 pb-12 px-4 mt-6">
       <HeaderSection
         onEdit={() => navigate('/profile/edit')}
         title={isAdmin ? 'My Recruiter Profile' : 'My Profile'}

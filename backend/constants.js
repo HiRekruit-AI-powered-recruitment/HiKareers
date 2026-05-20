@@ -3,5 +3,5 @@ export const watchedFields = [
   'emailVerified',
   'mobileVerified',
   'profilePhoto',
-  'highestQualification'
+  'highestQualification',
 ];

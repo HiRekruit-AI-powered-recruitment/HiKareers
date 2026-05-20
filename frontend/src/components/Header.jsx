@@ -7,6 +7,7 @@ import {
   FileText,
   LogOut,
   ChevronDown,
+  Bookmark,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/hikareers_logo.png';
@@ -17,7 +18,6 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, isAuthenticated: loggedIn, logout } = useAuth();
   const navigate = useNavigate();
-
   const isAdmin = user?.userType === 'admin';
 
   function handleLogout() {
@@ -94,26 +94,25 @@ export function Header() {
           <div className="hidden md:flex items-center gap-3">
             {loggedIn ? (
               <>
-                {!isAdmin && (
-                  <button
-                    onClick={
-                      isAdmin ? () => navigate('/admin/jobs/new') : handleApply
-                    }
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-                  >
-                    Apply for Job
-                  </button>
-                )}
-
                 {/* User Menu */}
                 <div className="relative group">
                   <button className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
-                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                      {user?.fullName?.charAt(0) || 'U'}
-                    </div>
+                    {user?.profilePhoto?.imageUrl ? (
+                      <img
+                        src={user.profilePhoto.imageUrl}
+                        alt={user?.fullName || 'User'}
+                        className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                        {user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
+                      </div>
+                    )}
+
                     <span className="font-medium text-sm max-w-32 truncate">
                       {user?.fullName || user?.userName}
                     </span>
+
                     <ChevronDown className="w-4 h-4" />
                   </button>
 
@@ -135,7 +134,15 @@ export function Header() {
                         <span className="text-sm">My Applications</span>
                       </a>
                     )}
-
+                    {!isAdmin && (
+                      <a
+                        href="/saved-jobs"
+                        className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <Bookmark className="w-4 h-4" />
+                        <span className="text-sm">Saved Jobs</span>
+                      </a>
+                    )}
                     <hr className="my-1 border-gray-200" />
                     <button
                       onClick={handleLogout}

@@ -5,7 +5,7 @@ import { useProfileCompletion } from '../../../contexts/ProfileCompletionContext
 export default function ProfileCompletionBanner() {
   const navigate = useNavigate();
   const { percentage } = useProfileCompletion();
-
+  console.log(percentage);
   if (percentage >= 100) return null;
 
   return (
