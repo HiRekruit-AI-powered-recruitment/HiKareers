@@ -81,12 +81,14 @@ export const createJob = asyncHandler(async (req, res) => {
     }
   }
 
-  await sendBulkMails({
-    users: matchedUsers,
-    applyLink,
-    company: job.company,
-    description: job.description,
-  });
+  if (matchedUsers.length > 0) {
+    await sendBulkMails({
+      users: matchedUsers,
+      applyLink,
+      company: job.company,
+      description: job.description,
+    });
+  }
   return res
     .status(201)
     .json(new ApiResponse(201, 'Job created successfully', { job, applyLink }));
