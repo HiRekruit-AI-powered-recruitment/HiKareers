@@ -8,7 +8,8 @@ export const sendBulkMails = async ({
   jobTitle = 'New Opportunity',
 }) => {
   if (!Array.isArray(users) || users.length === 0) {
-    throw new Error('users must be a non-empty array');
+    console.log('[sendBulkMails] No users provided. Skipping.');
+    return { sent: 0, failed: 0 };
   }
   if (!applyLink || !company || !description) {
     throw new Error('applyLink, company, and description are required');
