@@ -65,7 +65,7 @@ export const createJob = asyncHandler(async (req, res) => {
   });
 
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  const applyLink = `${frontendUrl}/apply/${job._id}`;
+  const applyLink = `${frontendUrl}/jobs/${job._id}`;
 
   const matchedUsers = [];
   const users = await User.find({ skills: { $exists: true, $ne: [] } });
@@ -81,12 +81,15 @@ export const createJob = asyncHandler(async (req, res) => {
     }
   }
 
-  await sendBulkMails({
-    users: matchedUsers,
-    applyLink,
-    company: job.company,
-    description: job.description,
-  });
+  if (matchedUsers.length > 0) {
+    await sendBulkMails({
+      users: matchedUsers,
+      applyLink,
+      company: job.company,
+      description: job.description,
+    });
+  }
+
   return res
     .status(201)
     .json(new ApiResponse(201, 'Job created successfully', { job, applyLink }));

@@ -120,7 +120,7 @@ export default function PostJob() {
         // Use applyLink from backend, with a safe frontend fallback
         const link =
           response.data?.applyLink ||
-          `${window.location.origin}/apply/${response.data?.job?._id}`;
+          `${window.location.origin}/jobs/${response.data?.job?._id}`;
         setApplyLink(link);
         setShowModal(true);
       } else {

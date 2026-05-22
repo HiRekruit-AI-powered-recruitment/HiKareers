@@ -151,17 +151,17 @@ const JobCard = ({ job, onApply, onSave, isSaved }) => {
 
         <div className="flex items-center gap-4">
           {/* Positions */}
-          {job.numberOfPositions && (
+          {job.numberOfPositions != null && (
             <span className="text-sm text-blue-600 font-medium">
               {job.numberOfPositions} Positions
             </span>
           )}
 
           <button
-            onClick={() => onApply(jobId)}
+            onClick={() => navigate(`/jobs/${jobId}`)}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
           >
-            Apply Now
+            See Details
           </button>
         </div>
       </div>
