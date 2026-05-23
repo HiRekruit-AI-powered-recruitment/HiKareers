@@ -89,7 +89,6 @@ export const createJob = asyncHandler(async (req, res) => {
       description: job.description,
     });
   }
-
   return res
     .status(201)
     .json(new ApiResponse(201, 'Job created successfully', { job, applyLink }));

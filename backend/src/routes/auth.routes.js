@@ -11,7 +11,7 @@ import {
 
 import verifyUser from '../middlewares/Auth.middleware.js';
 
-import { uploadProfilePhoto } from '../middlewares/multer.middleware.js';
+import { uploadProfilePhoto } from '../middlewares/Multer.middleware.js';
 
 const router = Router();
 
