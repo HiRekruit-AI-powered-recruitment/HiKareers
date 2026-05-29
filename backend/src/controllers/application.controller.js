@@ -106,20 +106,33 @@ export const createApplication = asyncHandler(async (req, res) => {
   // Sanitize backlogs safely (handles "2+", null, etc)
   const backlogsNumber = parseInt(backlogs) || 0;
 
-  let finalResumeUrl = resumeUrl;
+  let finalResumeUrl = resumeUrl || null;
   let finalResumePublicId = null;
 
-  // If a file was uploaded, upload it to Cloudinary
   if (req.file) {
-    const uploadResult = await UploadToCloudinary(
-      req.file.buffer,
-      `resumes/${jobId}`,
-      `${userId}_${Date.now()}`
-    );
-    finalResumeUrl = uploadResult.secure_url;
-    finalResumePublicId = uploadResult.public_id;
-  }
+    const resumeFile = req.file;
 
+    const allowedTypes = ['pdf', 'doc', 'docx'];
+
+    const ext = resumeFile.originalname.split('.').pop().toLowerCase();
+
+    if (!allowedTypes.includes(ext)) {
+      throw new ApiError(400, 'Only PDF, DOC, DOCX files are allowed');
+    }
+
+    const result = await UploadToCloudinary(
+      resumeFile.buffer,
+      `user_resume/${userId}`,
+      `resume_${Date.now()}`,
+      {
+        resource_type: 'raw',
+        format: ext,
+      }
+    );
+
+    finalResumeUrl = result.secure_url;
+    finalResumePublicId = result.public_id;
+  }
   try {
     // Create application
     const application = await Application.create({

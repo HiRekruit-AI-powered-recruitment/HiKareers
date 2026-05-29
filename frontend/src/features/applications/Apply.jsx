@@ -5,7 +5,11 @@ import { userAPI } from '../profile/api';
 import { isAuthenticated, getCurrentUser } from '../../utils/auth.js';
 import ProfileCompletionBanner from '../profile/components/ProfileCompletionBanner.jsx';
 
-const ALLOWED_FILE_TYPES = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+const ALLOWED_FILE_TYPES = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+];
 const ALLOWED_EXTENSIONS = ['pdf', 'doc', 'docx'];
 
 export default function Apply() {
@@ -38,10 +42,10 @@ export default function Apply() {
       highestQualification: '',
       percentage: '',
       cgpa: '',
-      yearOfPassing: ''
+      yearOfPassing: '',
     },
     backlogs: '0',
-    selectedResumeUrl: ''
+    selectedResumeUrl: '',
   });
 
   // New state for direct file upload
@@ -68,7 +72,10 @@ export default function Apply() {
   function isProfileComplete(user) {
     if (!user) return false;
     const hasResume = normalizeResumes(user.resumes).length > 0;
-    return Boolean(user.profileCompleted || (user.fullName && user.mobile && user.highestQualification && hasResume));
+    return Boolean(
+      user.profileCompleted ||
+      (user.fullName && user.mobile && user.highestQualification && hasResume)
+    );
   }
 
   async function loadUserData() {
@@ -83,8 +90,8 @@ export default function Apply() {
         const qualificationMap = {
           '10th': 'tenth',
           '12th': 'twelfth',
-          'graduation': 'graduation',
-          'postgraduation': 'postgraduation'
+          graduation: 'graduation',
+          postgraduation: 'postgraduation',
         };
 
         const qualKey = qualificationMap[userData.highestQualification];
@@ -100,8 +107,8 @@ export default function Apply() {
             highestQualification: userData.highestQualification || '',
             percentage: qualData?.percentage || '',
             cgpa: qualData?.cgpa || '',
-            yearOfPassing: qualData?.yearOfPassing || ''
-          }
+            yearOfPassing: qualData?.yearOfPassing || '',
+          },
         }));
 
         // Set first resume as default if available
@@ -109,7 +116,7 @@ export default function Apply() {
         if (firstResume && firstResume.url) {
           setForm((prev) => ({
             ...prev,
-            selectedResumeUrl: firstResume.url
+            selectedResumeUrl: firstResume.url,
           }));
         }
       }
@@ -121,7 +128,7 @@ export default function Apply() {
         setForm((prev) => ({
           ...prev,
           fullName: cachedUser.fullName || '',
-          email: cachedUser.email || ''
+          email: cachedUser.email || '',
         }));
       }
     } finally {
@@ -133,7 +140,7 @@ export default function Apply() {
     const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
     setError('');
   }
@@ -146,7 +153,10 @@ export default function Apply() {
 
     // Validate file type
     const ext = file.name.split('.').pop().toLowerCase();
-    if (!ALLOWED_FILE_TYPES.includes(file.type) && !ALLOWED_EXTENSIONS.includes(ext)) {
+    if (
+      !ALLOWED_FILE_TYPES.includes(file.type) &&
+      !ALLOWED_EXTENSIONS.includes(ext)
+    ) {
       setFileError('Only PDF, DOC, or DOCX files are allowed.');
       e.target.value = '';
       return;
@@ -165,8 +175,8 @@ export default function Apply() {
       ...prev,
       educationDetails: {
         ...prev.educationDetails,
-        [name]: value
-      }
+        [name]: value,
+      },
     }));
     setError('');
   }
@@ -200,6 +210,7 @@ export default function Apply() {
       setError('Please upload your resume (PDF, DOC, or DOCX).');
       return;
     }
+
     if (resumeMode === 'profile' && !form.selectedResumeUrl) {
       setError('Please select a resume from your profile.');
       return;
@@ -209,21 +220,30 @@ export default function Apply() {
     setError('');
     setSuccess('');
 
+    // allows UI to update instantly before upload starts
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
     try {
       let response;
 
       if (resumeMode === 'upload' && uploadedFile) {
         // Send as multipart/form-data with the actual file
         const formData = new FormData();
+
         formData.append('resume', uploadedFile);
         formData.append('jobId', form.jobId);
         formData.append('fullName', form.fullName);
         formData.append('email', form.email);
         formData.append('mobileNumber', form.mobileNumber);
         formData.append('backlogs', form.backlogs);
+
         if (form.educationDetails.highestQualification) {
-          formData.append('educationDetails', JSON.stringify(form.educationDetails));
+          formData.append(
+            'educationDetails',
+            JSON.stringify(form.educationDetails)
+          );
         }
+
         response = await applicationAPI.createApplicationWithFile(formData);
       } else {
         // Send JSON with existing resume URL from profile
@@ -232,20 +252,29 @@ export default function Apply() {
           fullName: form.fullName,
           email: form.email,
           mobileNumber: form.mobileNumber,
-          educationDetails: form.educationDetails.highestQualification ? form.educationDetails : null,
+          educationDetails: form.educationDetails.highestQualification
+            ? form.educationDetails
+            : null,
           backlogs: form.backlogs,
-          resumeUrl: form.selectedResumeUrl
+          resumeUrl: form.selectedResumeUrl,
         });
       }
 
       if (response.success) {
         setSuccess('Application submitted successfully!');
-        setTimeout(() => navigate('/applications'), 2000);
+
+        // removed unnecessary 2 second delay
+        navigate('/applications');
       } else {
         setError(response.message || 'Application submission failed');
       }
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Application submission failed');
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          'Application submission failed'
+      );
+
       console.error('Application error:', err);
     } finally {
       setSubmitting(false);
@@ -272,29 +301,27 @@ export default function Apply() {
   return (
     <div className="max-w-3xl mx-auto pb-12">
       {/* Profile Completion Banner */}
-      {showCompletionBanner && <div className="mb-6"><ProfileCompletionBanner /></div>}
+      {showCompletionBanner && (
+        <div className="mb-6">
+          <ProfileCompletionBanner />
+        </div>
+      )}
 
       {/* Apply Form Card */}
       <div className="card">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Job Application</h1>
-          <p className="text-neutral-600">Fill in the details below to submit your application</p>
+          <p className="text-neutral-600">
+            Fill in the details below to submit your application
+          </p>
         </div>
 
         {/* Error Alert */}
-        {error && (
-          <div className="alert alert-error mb-6">
-            {error}
-          </div>
-        )}
+        {error && <div className="alert alert-error mb-6">{error}</div>}
 
         {/* Success Alert */}
-        {success && (
-          <div className="alert alert-success mb-6">
-            {success}
-          </div>
-        )}
+        {success && <div className="alert alert-success mb-6">{success}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Job ID Section */}
@@ -310,7 +337,9 @@ export default function Apply() {
               required
               disabled={submitting}
             />
-            <p className="text-xs text-neutral-500">Enter the ID of the job position you're applying for</p>
+            <p className="text-xs text-neutral-500">
+              Enter the ID of the job position you're applying for
+            </p>
           </div>
 
           {/* Personal Information Section */}
@@ -364,11 +393,15 @@ export default function Apply() {
 
           {/* Education Details Section */}
           <div className="pt-6 border-t border-neutral-200">
-            <h2 className="text-xl font-semibold mb-4">Education Details (Optional)</h2>
+            <h2 className="text-xl font-semibold mb-4">
+              Education Details (Optional)
+            </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="label font-semibold">Highest Qualification</label>
+                <label className="label font-semibold">
+                  Highest Qualification
+                </label>
                 <select
                   name="highestQualification"
                   value={form.educationDetails.highestQualification}
@@ -461,54 +494,82 @@ export default function Apply() {
               <button
                 type="button"
                 onClick={() => setResumeMode('profile')}
-                className={`px-4 py-2 rounded-lg border text-sm font-medium transition ${resumeMode === 'profile'
-                  ? 'bg-neutral-900 text-white border-neutral-900'
-                  : 'bg-white text-neutral-700 border-neutral-300 hover:border-neutral-500'
-                  }`}
+                className={`px-4 py-2 rounded-lg border text-sm font-medium transition ${
+                  resumeMode === 'profile'
+                    ? 'bg-neutral-900 text-white border-neutral-900'
+                    : 'bg-white text-neutral-700 border-neutral-300 hover:border-neutral-500'
+                }`}
               >
                 Select from Profile
               </button>
               <button
                 type="button"
                 onClick={() => setResumeMode('upload')}
-                className={`px-4 py-2 rounded-lg border text-sm font-medium transition ${resumeMode === 'upload'
-                  ? 'bg-neutral-900 text-white border-neutral-900'
-                  : 'bg-white text-neutral-700 border-neutral-300 hover:border-neutral-500'
-                  }`}
+                className={`px-4 py-2 rounded-lg border text-sm font-medium transition ${
+                  resumeMode === 'upload'
+                    ? 'bg-neutral-900 text-white border-neutral-900'
+                    : 'bg-white text-neutral-700 border-neutral-300 hover:border-neutral-500'
+                }`}
               >
                 Upload New Resume
               </button>
             </div>
 
             {/* Profile resume selection */}
-            {resumeMode === 'profile' && (
-              normalizeResumes(user?.resumes).length > 0 ? (
+            {resumeMode === 'profile' &&
+              (normalizeResumes(user?.resumes).length > 0 ? (
                 <div className="space-y-3">
                   {normalizeResumes(user?.resumes).map((resume, index) => (
-                    <label key={index} className="flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition"
+                    <label
+                      key={index}
+                      className="flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition"
                       style={{
-                        borderColor: form.selectedResumeUrl === resume.url ? '#171717' : '#e5e7eb',
-                        backgroundColor: form.selectedResumeUrl === resume.url ? '#f5f5f5' : 'transparent'
-                      }}>
+                        borderColor:
+                          form.selectedResumeUrl === resume.url
+                            ? '#171717'
+                            : '#e5e7eb',
+                        backgroundColor:
+                          form.selectedResumeUrl === resume.url
+                            ? '#f5f5f5'
+                            : 'transparent',
+                      }}
+                    >
                       <input
                         type="radio"
                         name="selectedResumeUrl"
                         value={resume.url}
                         checked={form.selectedResumeUrl === resume.url}
-                        onChange={(e) => setForm((prev) => ({ ...prev, selectedResumeUrl: e.target.value }))}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            selectedResumeUrl: e.target.value,
+                          }))
+                        }
                         className="mt-1"
                         disabled={submitting}
                       />
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <svg className="w-5 h-5 text-neutral-500" fill="currentColor" viewBox="0 0 20 20">
+                          <svg
+                            className="w-5 h-5 text-neutral-500"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
                             <path d="M4 4a2 2 0 012-2h6a1 1 0 00-1-1H6a3 3 0 00-3 3v10a3 3 0 003 3h6a3 3 0 003-3V9a1 1 0 10-2 0v5a1 1 0 11-2 0V4z" />
                           </svg>
-                          <p className="font-medium text-neutral-900">Resume {index + 1}</p>
+                          <p className="font-medium text-neutral-900">
+                            Resume {index + 1}
+                          </p>
                         </div>
-                        <p className="text-sm text-neutral-600">{resume.fileName || 'Resume PDF'}</p>
+                        <p className="text-sm text-neutral-600">
+                          {resume.fileName || 'Resume PDF'}
+                        </p>
                         <p className="text-xs text-neutral-500 mt-1">
-                          Uploaded {new Date(resume.uploadedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                          Uploaded{' '}
+                          {new Date(resume.uploadedAt).toLocaleDateString(
+                            'en-US',
+                            { year: 'numeric', month: 'short', day: 'numeric' }
+                          )}
                         </p>
                       </div>
                     </label>
@@ -516,14 +577,28 @@ export default function Apply() {
                 </div>
               ) : (
                 <div className="text-center py-8 bg-neutral-50 rounded-xl border-2 border-dashed border-neutral-200">
-                  <svg className="w-12 h-12 text-neutral-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  <svg
+                    className="w-12 h-12 text-neutral-300 mx-auto mb-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                    />
                   </svg>
-                  <p className="text-neutral-600 font-medium">No resumes in your profile</p>
-                  <p className="text-sm text-neutral-500 mt-1">Switch to "Upload New Resume" above, or add one in your profile</p>
+                  <p className="text-neutral-600 font-medium">
+                    No resumes in your profile
+                  </p>
+                  <p className="text-sm text-neutral-500 mt-1">
+                    Switch to "Upload New Resume" above, or add one in your
+                    profile
+                  </p>
                 </div>
-              )
-            )}
+              ))}
 
             {/* Direct file upload */}
             {resumeMode === 'upload' && (
@@ -533,26 +608,53 @@ export default function Apply() {
                   className="flex flex-col items-center justify-center w-full py-10 border-2 border-dashed rounded-xl cursor-pointer transition"
                   style={{
                     borderColor: uploadedFile ? '#171717' : '#e5e7eb',
-                    backgroundColor: uploadedFile ? '#f5f5f5' : 'transparent'
+                    backgroundColor: uploadedFile ? '#f5f5f5' : 'transparent',
                   }}
                 >
                   {uploadedFile ? (
                     <div className="text-center">
-                      <svg className="w-10 h-10 text-green-600 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      <svg
+                        className="w-10 h-10 text-green-600 mx-auto mb-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
                       </svg>
-                      <p className="font-semibold text-neutral-900">{uploadedFile.name}</p>
+                      <p className="font-semibold text-neutral-900">
+                        {uploadedFile.name}
+                      </p>
                       <p className="text-sm text-neutral-500 mt-1">
-                        {(uploadedFile.size / 1024).toFixed(1)} KB — click to change
+                        {(uploadedFile.size / 1024).toFixed(1)} KB — click to
+                        change
                       </p>
                     </div>
                   ) : (
                     <div className="text-center">
-                      <svg className="w-10 h-10 text-neutral-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      <svg
+                        className="w-10 h-10 text-neutral-400 mx-auto mb-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                        />
                       </svg>
-                      <p className="text-neutral-600 font-medium">Click to upload your resume</p>
-                      <p className="text-sm text-neutral-500 mt-1">PDF, DOC, or DOCX — max 5MB</p>
+                      <p className="text-neutral-600 font-medium">
+                        Click to upload your resume
+                      </p>
+                      <p className="text-sm text-neutral-500 mt-1">
+                        PDF, DOC, or DOCX — max 5MB
+                      </p>
                     </div>
                   )}
                   <input
@@ -582,7 +684,14 @@ export default function Apply() {
               }
               className="btn btn-primary btn-lg w-full"
             >
-              {submitting ? 'Submitting Application...' : 'Submit Application'}
+              {submitting ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Submitting Application...</span>
+                </div>
+              ) : (
+                'Submit Application'
+              )}
             </button>
           </div>
         </form>
@@ -591,12 +700,22 @@ export default function Apply() {
         <div className="mt-8 pt-6 border-t border-neutral-200">
           <div className="flex gap-3">
             <div className="flex-shrink-0">
-              <svg className="w-5 h-5 text-neutral-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              <svg
+                className="w-5 h-5 text-neutral-600 mt-0.5"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                  clipRule="evenodd"
+                />
               </svg>
             </div>
             <div>
-              <p className="text-sm font-medium text-neutral-900">Application Guidelines</p>
+              <p className="text-sm font-medium text-neutral-900">
+                Application Guidelines
+              </p>
               <ul className="text-sm text-neutral-600 mt-2 space-y-1 list-disc list-inside">
                 <li>Ensure all required fields are filled accurately</li>
                 <li>You can only apply once per job position</li>
