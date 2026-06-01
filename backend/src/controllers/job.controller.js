@@ -78,7 +78,7 @@ export const createJob = asyncHandler(async (req, res) => {
         email: user.email,
         name: user.fullName,
       });
-    }
+    }what
   }
 
   if (matchedUsers.length > 0) {

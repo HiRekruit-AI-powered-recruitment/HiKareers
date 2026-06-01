@@ -20,7 +20,6 @@ export default function Signup() {
   const [error, setError] = useState('');
   const [formErrors, setFormErrors] = useState({});
 
-  // Redirect if already logged in
   useEffect(() => {
     if (isAuthenticated) {
       navigate(location.state?.from?.pathname || '/', { replace: true });
@@ -30,8 +29,6 @@ export default function Signup() {
   function validateForm() {
     const errors = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    // Allows letters, numbers, and special characters
     const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
 
     if (!form.fullName.trim()) {
@@ -65,7 +62,6 @@ export default function Signup() {
   function handleChange(e) {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-    // Clear error for this field when user types
     if (formErrors[name]) {
       setFormErrors((prev) => ({ ...prev, [name]: '' }));
     }
@@ -92,9 +88,7 @@ export default function Signup() {
   async function handleSubmit(e) {
     e.preventDefault();
 
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
     setError('');
@@ -104,25 +98,19 @@ export default function Signup() {
       formData.append('fullName', form.fullName);
       formData.append('email', form.email);
       formData.append('password', form.password);
-      if (profilePhoto) {
-        formData.append('profilePhoto', profilePhoto);
-      }
+      if (profilePhoto) formData.append('profilePhoto', profilePhoto);
 
       const result = await signup(formData);
 
       if (result.success) {
-        // Redirect to login with success state
         navigate('/login', {
-          state: {
-            success: true,
-            from: location.state?.from,
-          },
+          state: { success: true, from: location.state?.from },
+          replace: true,
         });
-      } else {
-        setError(
-          result.message || 'Failed to create account. Please try again.'
-        );
+        return;
       }
+
+      setError(result.message || 'Failed to create account. Please try again.');
     } catch (error) {
       console.error('Signup error:', error);
       setError('An unexpected error occurred. Please try again.');
@@ -134,7 +122,6 @@ export default function Signup() {
   return (
     <div className="min-h-[calc(100vh-200px)] flex items-center justify-center py-12 px-4">
       <div className="card max-w-md w-full bg-white shadow-md rounded-lg p-8">
-        {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Create your account
@@ -142,14 +129,12 @@ export default function Signup() {
           <p className="text-gray-600">Join HiKareers to get started</p>
         </div>
 
-        {/* Error Alert */}
         {error && (
           <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-md">
             {error}
           </div>
         )}
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label

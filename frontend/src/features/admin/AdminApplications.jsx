@@ -6,6 +6,7 @@ import {
   Building2,
   Users,
   Briefcase,
+  Download,
 } from 'lucide-react';
 import { adminAPI } from './api';
 import ApplicationTable from './components/ApplicationTable';
@@ -106,6 +107,20 @@ function ApplicantRow({ app, onUpdateStatus }) {
       </td>
       <td className="px-5 py-3.5">
         <StatusPill status={status} />
+      </td>
+      <td className="px-5 py-3.5">
+        {app.resumeUrl ? (
+          <a
+            href={app.resumeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition"
+          >
+            <Download className="w-3.5 h-3.5" />
+          </a>
+        ) : (
+          <span className="text-xs text-slate-400">No Resume</span>
+        )}
       </td>
       <td className="px-5 py-3.5 text-right">
         {(() => {
@@ -233,6 +248,9 @@ function CompanyCard({ companyName, applications, onUpdateStatus }) {
                 </th>
                 <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
                   Status
+                </th>
+                <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                  Resume
                 </th>
                 <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide text-right">
                   Update
