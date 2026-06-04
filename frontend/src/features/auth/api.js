@@ -24,4 +24,13 @@ export const authAPI = {
     handleRequest(client.post('/auth/verify-email', { token })),
 
   logout: () => handleRequest(client.post('/auth/logout')),
+  adminRegister: (userData) =>
+    handleRequest(
+      client.post('/auth/admin/register', userData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    ),
+
+  adminLogin: (credentials) =>
+    handleRequest(client.post('/auth/admin/login', credentials)),
 };

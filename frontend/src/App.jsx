@@ -37,6 +37,8 @@ import EmployerDashboard from './features/Employers/EmployerDashboard';
 import ForgotPassword from './features/auth/ForgotPassword';
 import ResetPassword from './features/auth/ResetPassword';
 import SavedJobs from './features/jobs/SavedJobs';
+import AdminSignup from './features/admin/AdminSignup';
+import AdminLogin from './features/admin/AdminLogin';
 
 function AppContent() {
   const { user } = useAuth();
@@ -176,6 +178,9 @@ function AppContent() {
             <Route path="/employer-dashboard" element={<EmployerDashboard />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
+            <Route path="/admin/signup" element={<AdminSignup />} />
+            <Route path="/admin/signup" element={<AdminSignup />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
           </Routes>
         </main>
 

@@ -38,6 +38,11 @@ const userSchema = mongoose.Schema(
       enum: ['applicant', 'admin'],
       default: 'applicant',
     },
+    approvalStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: null,
+    },
     fullName: {
       type: String,
       required: true,

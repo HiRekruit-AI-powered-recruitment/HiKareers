@@ -117,7 +117,67 @@ export const AuthProvider = ({ children }) => {
       navigate('/login');
     }
   };
+  const adminLogin = async (email, password) => {
+    try {
+      const response = await authAPI.adminLogin({ email, password });
 
+      if (response.success && response.data) {
+        const { accessToken, user } = response.data;
+
+        // Extra guard on the client side too
+        if (user.userType !== 'admin') {
+          return {
+            success: false,
+            message: 'Access denied. Not an admin account.',
+          };
+        }
+        if (user.approvalStatus !== 'approved') {
+          return {
+            success: false,
+            message:
+              user.approvalStatus === 'pending'
+                ? 'Your account is pending approval. You will be notified via email.'
+                : 'Your account request was rejected. Please contact support.',
+          };
+        }
+
+        sessionStorage.setItem('accessToken', accessToken);
+        sessionStorage.setItem('user', JSON.stringify(user));
+        setUser(user);
+        return { success: true };
+      }
+
+      return { success: false, message: response.message || 'Login failed' };
+    } catch (error) {
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || error.message || 'Login failed',
+      };
+    }
+  };
+
+  const adminSignup = async (userData) => {
+    try {
+      const response = await authAPI.adminRegister(userData);
+
+      if (response.success) {
+        return { success: true };
+      }
+      return {
+        success: false,
+        message: response.message || 'Registration failed',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          error.message ||
+          'Registration failed',
+      };
+    }
+  };
   const forgetPassword = async (email) => {
     try {
       const response = await authAPI.forgotPassword(email);
@@ -157,6 +217,8 @@ export const AuthProvider = ({ children }) => {
     login,
     signup,
     logout,
+    adminLogin,
+    adminSignup,
     forgetPassword,
     resetPassword,
   };
