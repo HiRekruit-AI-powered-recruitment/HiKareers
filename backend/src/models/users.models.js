@@ -35,7 +35,7 @@ const userSchema = mongoose.Schema(
     },
     userType: {
       type: String,
-      enum: ['applicant', 'admin'],
+      enum: ['applicant', 'admin', 'super-admin'],
       default: 'applicant',
     },
     approvalStatus: {

@@ -1,4 +1,3 @@
-// src/contexts/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../features/auth/api';
@@ -11,7 +10,6 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Check if user is logged in on initial load
   useEffect(() => {
     const checkAuth = () => {
       try {
@@ -19,10 +17,7 @@ export const AuthProvider = ({ children }) => {
         const userData = sessionStorage.getItem('user');
 
         if (token && userData) {
-          // Set the user from session storage initially
           setUser(JSON.parse(userData));
-
-          // Then verify the token in the background
           verifyToken();
         } else {
           setIsLoading(false);
@@ -42,7 +37,6 @@ export const AuthProvider = ({ children }) => {
           setUser(response.data);
           sessionStorage.setItem('user', JSON.stringify(response.data));
         } else {
-          // Token is invalid, clear it
           sessionStorage.removeItem('accessToken');
           sessionStorage.removeItem('user');
           setUser(null);
@@ -60,17 +54,28 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, []);
 
+  // Replace ONLY the login function in your AuthContext.jsx with this:
+
   const login = async (email, password) => {
     try {
       const response = await authAPI.login({ email, password });
 
       if (response.success && response.data) {
         const { accessToken, user } = response.data;
+
+        if (user.userType !== 'applicant') {
+          return {
+            success: false,
+            message: 'Please use the admin login page.',
+          };
+        }
+
         sessionStorage.setItem('accessToken', accessToken);
         sessionStorage.setItem('user', JSON.stringify(user));
         setUser(user);
-        return { success: true };
+        return { success: true, userType: user.userType };
       }
+
       return { success: false, message: response.message || 'Login failed' };
     } catch (error) {
       console.error('Login error:', error);
@@ -85,7 +90,6 @@ export const AuthProvider = ({ children }) => {
   const signup = async (userData) => {
     try {
       const response = await authAPI.signup(userData);
-
       if (response.success && response.data) {
         return { success: true };
       }
@@ -101,22 +105,21 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
+    const wasAdmin = ['admin', 'super-admin'].includes(user?.userType);
+
+    sessionStorage.removeItem('accessToken');
+    sessionStorage.removeItem('user');
+    setUser(null);
+
     try {
       await authAPI.logout();
     } catch (err) {
       console.warn('Server logout failed:', err);
     } finally {
-      // Clear session storage
-      sessionStorage.removeItem('accessToken');
-      sessionStorage.removeItem('user');
-
-      // Clear user state
-      setUser(null);
-
-      // Navigate to login page directly
-      navigate('/login');
+      navigate(wasAdmin ? '/admin/login' : '/login');
     }
   };
+
   const adminLogin = async (email, password) => {
     try {
       const response = await authAPI.adminLogin({ email, password });
@@ -124,14 +127,13 @@ export const AuthProvider = ({ children }) => {
       if (response.success && response.data) {
         const { accessToken, user } = response.data;
 
-        // Extra guard on the client side too
-        if (user.userType !== 'admin') {
+        if (!['admin', 'super-admin'].includes(user.userType)) {
           return {
             success: false,
             message: 'Access denied. Not an admin account.',
           };
         }
-        if (user.approvalStatus !== 'approved') {
+        if (user.userType === 'admin' && user.approvalStatus !== 'approved') {
           return {
             success: false,
             message:
@@ -160,7 +162,6 @@ export const AuthProvider = ({ children }) => {
   const adminSignup = async (userData) => {
     try {
       const response = await authAPI.adminRegister(userData);
-
       if (response.success) {
         return { success: true };
       }
@@ -178,14 +179,13 @@ export const AuthProvider = ({ children }) => {
       };
     }
   };
+
   const forgetPassword = async (email) => {
     try {
       const response = await authAPI.forgotPassword(email);
-
       return response;
     } catch (err) {
       console.log(err);
-
       return {
         success: false,
         message:
@@ -195,14 +195,13 @@ export const AuthProvider = ({ children }) => {
       };
     }
   };
+
   const resetPassword = async (token, password) => {
     try {
       const response = await authAPI.resetPassword(token, password);
-
       return response;
     } catch (err) {
       console.log(err);
-
       return {
         success: false,
         message:
@@ -210,6 +209,7 @@ export const AuthProvider = ({ children }) => {
       };
     }
   };
+
   const value = {
     user,
     isAuthenticated: !!user,

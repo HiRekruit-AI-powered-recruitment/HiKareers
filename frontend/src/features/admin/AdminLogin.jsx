@@ -1,21 +1,24 @@
-// pages/admin/AdminLogin.jsx
-
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { adminLogin, isAuthenticated } = useAuth();
+  const { adminLogin, isAuthenticated, user } = useAuth();
 
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (isAuthenticated) navigate('/', { replace: true });
-  }, [isAuthenticated, navigate]);
+    if (isAuthenticated) {
+      if (user?.userType === 'super-admin') {
+        navigate('/super-admin/dashboard', { replace: true });
+      } else {
+        navigate('/admin-dashboard', { replace: true });
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -34,7 +37,6 @@ export default function AdminLogin() {
     try {
       const result = await adminLogin(form.email, form.password);
       if (result.success) {
-        navigate('/admin/dashboard', { replace: true });
         return;
       }
       setError(result.message || 'Login failed. Please try again.');
@@ -144,7 +146,7 @@ export default function AdminLogin() {
           </button>
         </form>
 
-        <div className="mt-6 text-center space-y-2">
+        <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
             Need an admin account?{' '}
             <Link

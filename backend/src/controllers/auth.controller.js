@@ -512,21 +512,39 @@ export const resetPassword = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, 'Password reset successful'));
 });
 
+export const getAllAdmins = asyncHandler(async (req, res) => {
+  const { status } = req.query;
+
+  const filter = { userType: 'admin' };
+  if (status) filter.approvalStatus = status;
+
+  const admins = await User.find(filter)
+    .select('-password -refreshToken -passwordResetToken -passwordResetExpiry')
+    .sort({ createdAt: -1 });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, 'Admins fetched successfully', { admins }));
+});
+
 export const updateAdminApproval = asyncHandler(async (req, res) => {
+  console.log(req.body);
+
   const { id } = req.params;
   const { action } = req.body;
 
-  if (!['approve', 'reject'].includes(action)) {
-    throw new ApiError(400, 'action must be "approve" or "reject"');
+  if (!['approved', 'rejected'].includes(action)) {
+    throw new ApiError(400, 'action must be "approved" or "rejected"');
   }
 
   const admin = await User.findOne({ _id: id, userType: 'admin' });
   if (!admin) throw new ApiError(404, 'Admin not found');
 
-  admin.approvalStatus = action === 'approve' ? 'approved' : 'rejected';
+  admin.approvalStatus = action;
   await admin.save();
 
-  const approved = action === 'approve';
+  const approved = action === 'approved';
+
   try {
     await sendMail({
       to: admin.email,
@@ -534,37 +552,37 @@ export const updateAdminApproval = asyncHandler(async (req, res) => {
         ? 'Your Admin Account Has Been Approved!'
         : 'Admin Account Request Update',
       html: `<!DOCTYPE html>
-        <html>
-        <body style="margin:0;padding:30px;background:#f5f7fa;font-family:Arial,sans-serif;">
-        <table width="100%" cellpadding="0" cellspacing="0" border="0">
-          <tr><td align="center">
-          <table width="520" cellpadding="0" cellspacing="0" border="0"
-                 style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.07);">
-            <tr><td style="height:4px;background:${approved ? '#16a34a' : '#dc2626'};"></td></tr>
-            <tr>
-              <td style="padding:40px 44px;">
-                <h1 style="margin:0 0 16px;color:#111;font-size:24px;font-weight:700;">
-                  ${approved ? "You're approved! " : 'Account Request Update'}
-                </h1>
-                <p style="margin:0 0 28px;color:#555;font-size:15px;line-height:1.7;">
-                  ${
-                    approved
-                      ? `Hi ${admin.fullName}, your admin account is now active. You can log in to the HiKareers admin panel.`
-                      : `Hi ${admin.fullName}, unfortunately your admin account request was not approved at this time. Please contact support if you think this is a mistake.`
-                  }
-                </p>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:20px 44px;border-top:1px solid #f0f0f0;">
-                <p style="margin:0;color:#aaa;font-size:12px;">© 2025 HiKareers · All rights reserved</p>
-              </td>
-            </tr>
-          </table>
-          </td></tr>
+      <html>
+      <body style="margin:0;padding:30px;background:#f5f7fa;font-family:Arial,sans-serif;">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td align="center">
+        <table width="520" cellpadding="0" cellspacing="0" border="0"
+               style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.07);">
+          <tr><td style="height:4px;background:${approved ? '#16a34a' : '#dc2626'};"></td></tr>
+          <tr>
+            <td style="padding:40px 44px;">
+              <h1 style="margin:0 0 16px;color:#111;font-size:24px;font-weight:700;">
+                ${approved ? "You're approved!" : 'Account Request Update'}
+              </h1>
+              <p style="margin:0 0 28px;color:#555;font-size:15px;line-height:1.7;">
+                ${
+                  approved
+                    ? `Hi ${admin.fullName}, your admin account is now active. You can log in to the HiKareers admin panel.`
+                    : `Hi ${admin.fullName}, unfortunately your admin account request was not approved. Please contact support if you think this is a mistake.`
+                }
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 44px;border-top:1px solid #f0f0f0;">
+              <p style="margin:0;color:#aaa;font-size:12px;">© 2025 HiKareers · All rights reserved</p>
+            </td>
+          </tr>
         </table>
-        </body>
-        </html>`,
+        </td></tr>
+      </table>
+      </body>
+      </html>`,
     });
   } catch (err) {
     console.log('Approval email failed:', err.message);
@@ -572,6 +590,64 @@ export const updateAdminApproval = asyncHandler(async (req, res) => {
 
   return res.status(200).json(
     new ApiResponse(200, `Admin ${action}d successfully`, {
+      _id: admin._id,
+      approvalStatus: admin.approvalStatus,
+    })
+  );
+});
+
+export const revokeAdmin = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const admin = await User.findOne({ _id: id, userType: 'admin' });
+  if (!admin) throw new ApiError(404, 'Admin not found');
+
+  if (admin.approvalStatus !== 'approved') {
+    throw new ApiError(400, 'Only approved admins can be revoked');
+  }
+
+  admin.approvalStatus = 'rejected';
+  admin.refreshToken = undefined;
+  await admin.save({ validateBeforeSave: false });
+
+  try {
+    await sendMail({
+      to: admin.email,
+      subject: 'Your Admin Access Has Been Revoked',
+      html: `<!DOCTYPE html>
+      <html>
+      <body style="margin:0;padding:30px;background:#f5f7fa;font-family:Arial,sans-serif;">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td align="center">
+        <table width="520" cellpadding="0" cellspacing="0" border="0"
+               style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.07);">
+          <tr><td style="height:4px;background:#dc2626;"></td></tr>
+          <tr>
+            <td style="padding:40px 44px;">
+              <h1 style="margin:0 0 16px;color:#111;font-size:24px;font-weight:700;">Admin Access Revoked</h1>
+              <p style="margin:0 0 28px;color:#555;font-size:15px;line-height:1.7;">
+                Hi ${admin.fullName}, your admin access to HiKareers has been revoked.
+                Please contact support if you believe this is a mistake.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 44px;border-top:1px solid #f0f0f0;">
+              <p style="margin:0;color:#aaa;font-size:12px;">© 2025 HiKareers · All rights reserved</p>
+            </td>
+          </tr>
+        </table>
+        </td></tr>
+      </table>
+      </body>
+      </html>`,
+    });
+  } catch (err) {
+    console.log('Revoke email failed:', err.message);
+  }
+
+  return res.status(200).json(
+    new ApiResponse(200, 'Admin revoked successfully', {
       _id: admin._id,
       approvalStatus: admin.approvalStatus,
     })

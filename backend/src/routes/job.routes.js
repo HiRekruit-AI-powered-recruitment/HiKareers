@@ -10,6 +10,7 @@ import {
   saveJob,
   removeSavedJob,
   getAllSavedJobs,
+  getAllJobsSuperAdmin,
 } from '../controllers/job.controller.js';
 import verifyUser from '../middlewares/Auth.middleware.js';
 import { authorizeRole } from '../middlewares/Role.middleware.js';
@@ -41,6 +42,13 @@ router.put('/:jobId', verifyUser, authorizeRole('admin'), updateJob);
 
 router.delete('/:jobId', verifyUser, authorizeRole('admin'), deleteJob);
 
+router.get(
+  '/all',
+  verifyUser,
+  authorizeRole('super-admin'),
+  getAllJobsSuperAdmin
+);
 // Dynamic route ALWAYS LAST
 router.get('/:jobId', getJobById);
+
 export default router;

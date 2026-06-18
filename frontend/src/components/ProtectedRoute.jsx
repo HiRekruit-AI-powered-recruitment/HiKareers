@@ -1,4 +1,3 @@
-// src/components/ProtectedRoute.jsx
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -16,12 +15,17 @@ export default function ProtectedRoute({ children, roles }) {
   }
 
   if (!isAuthenticated) {
-    // Redirect to the login page, but save the current location they were trying to go to
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   if (roles && !roles.includes(user.userType)) {
-    // If user doesn't have required role, redirect to home
+    // Redirect to the correct home based on userType instead of always going to '/'
+    if (user.userType === 'super-admin') {
+      return <Navigate to="/super-admin/dashboard" replace />;
+    }
+    if (user.userType === 'admin') {
+      return <Navigate to="/admin-dashboard" replace />;
+    }
     return <Navigate to="/" replace />;
   }
 

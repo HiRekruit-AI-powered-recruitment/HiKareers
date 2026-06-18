@@ -78,7 +78,7 @@ export const createJob = asyncHandler(async (req, res) => {
         email: user.email,
         name: user.fullName,
       });
-    }what
+    }
   }
 
   if (matchedUsers.length > 0) {
@@ -94,7 +94,6 @@ export const createJob = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, 'Job created successfully', { job, applyLink }));
 });
 
-// GET /v1/jobs  — Get all jobs with filtering (supports search, location, jobType, workMode, experienceLevel, createdBy, status)
 export const getAllJobs = asyncHandler(async (req, res) => {
   const {
     search,
@@ -340,4 +339,13 @@ export const getAllSavedJobs = asyncHandler(async (req, res) => {
         user.savedJobs
       )
     );
+});
+export const getAllJobsSuperAdmin = asyncHandler(async (req, res) => {
+  const jobs = await Job.find()
+    .populate('createdBy', 'fullName email')
+    .sort({ createdAt: -1 });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, 'All jobs fetched successfully', { jobs }));
 });
