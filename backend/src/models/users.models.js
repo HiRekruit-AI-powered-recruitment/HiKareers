@@ -35,8 +35,13 @@ const userSchema = mongoose.Schema(
     },
     userType: {
       type: String,
-      enum: ['applicant', 'admin'],
+      enum: ['applicant', 'admin', 'super-admin'],
       default: 'applicant',
+    },
+    approvalStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: null,
     },
     fullName: {
       type: String,

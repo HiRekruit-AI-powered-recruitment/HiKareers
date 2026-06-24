@@ -8,7 +8,7 @@ import UploadImageToCloudinary from '../utils/UploadImageToCloudinary.js';
 import crypto from 'crypto';
 
 export const register = asyncHandler(async (req, res) => {
-  const { email, fullName, password } = req.body;
+  const { email, fullName, password, userType } = req.body;
   const options = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -48,6 +48,7 @@ export const register = asyncHandler(async (req, res) => {
     fullName,
     password,
     profilePhoto,
+    userType,
   });
 
   await newUser.save();
@@ -114,6 +115,89 @@ export const register = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, 'User registered successfully', createdUser));
 });
 
+export const adminRegister = asyncHandler(async (req, res) => {
+  const { email, fullName, password } = req.body;
+
+  if (!email || !fullName || !password) {
+    throw new ApiError(400, 'All fields are required');
+  }
+
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
+    throw new ApiError(409, 'User with this email already exists');
+  }
+
+  let profilePhoto = { imageUrl: null, publicId: null };
+  if (req.file) {
+    const uploaded = await UploadImageToCloudinary(
+      req.file.buffer,
+      'user/profile-images',
+      `user-${Date.now()}`
+    );
+    profilePhoto = {
+      imageUrl: uploaded.secure_url,
+      publicId: uploaded.public_id,
+    };
+  }
+
+  const newAdmin = new User({
+    email,
+    fullName,
+    password,
+    profilePhoto,
+    userType: 'admin',
+    approvalStatus: 'pending',
+  });
+
+  await newAdmin.save();
+
+  try {
+    await sendMail({
+      to: email,
+      subject: 'Admin Registration Received – Pending Approval',
+      html: `<!DOCTYPE html>
+        <html>
+        <body style="margin:0;padding:30px;background:#f5f7fa;font-family:Arial,sans-serif;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr><td align="center">
+          <table width="520" cellpadding="0" cellspacing="0" border="0"
+                 style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.07);">
+            <tr><td style="height:4px;background:#d97706;"></td></tr>
+            <tr>
+              <td style="padding:40px 44px;">
+                <p style="margin:0 0 32px;color:#d97706;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">HiKareers Admin</p>
+                <h1 style="margin:0 0 14px;color:#111;font-size:26px;font-weight:700;">Registration Received</h1>
+                <p style="margin:0 0 24px;color:#555;font-size:15px;line-height:1.7;">
+                  Hi ${fullName}, your admin account request has been received.<br/>
+                  Our team will review it shortly. You'll get another email once it's approved.
+                </p>
+                <p style="margin:0;color:#888;font-size:13px;">If you didn't request this, please ignore this email.</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 44px;border-top:1px solid #f0f0f0;">
+                <p style="margin:0;color:#aaa;font-size:12px;">© 2025 HiKareers · All rights reserved</p>
+              </td>
+            </tr>
+          </table>
+          </td></tr>
+        </table>
+        </body>
+        </html>`,
+    });
+  } catch (err) {
+    console.log('Registrant email failed:', err.message);
+  }
+
+  return res.status(201).json(
+    new ApiResponse(201, 'Admin registration submitted. Awaiting approval.', {
+      email: newAdmin.email,
+      fullName: newAdmin.fullName,
+      approvalStatus: newAdmin.approvalStatus,
+    })
+  );
+});
+
 export const login = asyncHandler(async (req, res) => {
   const { userName, email, password } = req.body;
 
@@ -125,13 +209,20 @@ export const login = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Password is required');
   }
 
-  // Build query safely
   const query = userName ? { userName } : { email };
 
   const user = await User.findOne(query);
 
   if (!user) {
     throw new ApiError(404, 'User does not exist');
+  }
+
+  if (user.userType === 'admin' && user.approvalStatus !== 'approved') {
+    const msg =
+      user.approvalStatus === 'pending'
+        ? 'Your admin account is pending approval. You will be notified via email.'
+        : 'Your admin account request was rejected. Please contact support.';
+    throw new ApiError(403, msg);
   }
 
   const isPasswordValid = await user.isPasswordCorrect(password);
@@ -419,4 +510,146 @@ export const resetPassword = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, 'Password reset successful'));
+});
+
+export const getAllAdmins = asyncHandler(async (req, res) => {
+  const { status } = req.query;
+
+  const filter = { userType: 'admin' };
+  if (status) filter.approvalStatus = status;
+
+  const admins = await User.find(filter)
+    .select('-password -refreshToken -passwordResetToken -passwordResetExpiry')
+    .sort({ createdAt: -1 });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, 'Admins fetched successfully', { admins }));
+});
+
+export const updateAdminApproval = asyncHandler(async (req, res) => {
+  console.log(req.body);
+
+  const { id } = req.params;
+  const { action } = req.body;
+
+  if (!['approved', 'rejected'].includes(action)) {
+    throw new ApiError(400, 'action must be "approved" or "rejected"');
+  }
+
+  const admin = await User.findOne({ _id: id, userType: 'admin' });
+  if (!admin) throw new ApiError(404, 'Admin not found');
+
+  admin.approvalStatus = action;
+  await admin.save();
+
+  const approved = action === 'approved';
+
+  try {
+    await sendMail({
+      to: admin.email,
+      subject: approved
+        ? 'Your Admin Account Has Been Approved!'
+        : 'Admin Account Request Update',
+      html: `<!DOCTYPE html>
+      <html>
+      <body style="margin:0;padding:30px;background:#f5f7fa;font-family:Arial,sans-serif;">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td align="center">
+        <table width="520" cellpadding="0" cellspacing="0" border="0"
+               style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.07);">
+          <tr><td style="height:4px;background:${approved ? '#16a34a' : '#dc2626'};"></td></tr>
+          <tr>
+            <td style="padding:40px 44px;">
+              <h1 style="margin:0 0 16px;color:#111;font-size:24px;font-weight:700;">
+                ${approved ? "You're approved!" : 'Account Request Update'}
+              </h1>
+              <p style="margin:0 0 28px;color:#555;font-size:15px;line-height:1.7;">
+                ${
+                  approved
+                    ? `Hi ${admin.fullName}, your admin account is now active. You can log in to the HiKareers admin panel.`
+                    : `Hi ${admin.fullName}, unfortunately your admin account request was not approved. Please contact support if you think this is a mistake.`
+                }
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 44px;border-top:1px solid #f0f0f0;">
+              <p style="margin:0;color:#aaa;font-size:12px;">© 2025 HiKareers · All rights reserved</p>
+            </td>
+          </tr>
+        </table>
+        </td></tr>
+      </table>
+      </body>
+      </html>`,
+    });
+  } catch (err) {
+    console.log('Approval email failed:', err.message);
+  }
+
+  return res.status(200).json(
+    new ApiResponse(200, `Admin ${action}d successfully`, {
+      _id: admin._id,
+      approvalStatus: admin.approvalStatus,
+    })
+  );
+});
+
+export const revokeAdmin = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const admin = await User.findOne({ _id: id, userType: 'admin' });
+  if (!admin) throw new ApiError(404, 'Admin not found');
+
+  if (admin.approvalStatus !== 'approved') {
+    throw new ApiError(400, 'Only approved admins can be revoked');
+  }
+
+  admin.approvalStatus = 'rejected';
+  admin.refreshToken = undefined;
+  await admin.save({ validateBeforeSave: false });
+
+  try {
+    await sendMail({
+      to: admin.email,
+      subject: 'Your Admin Access Has Been Revoked',
+      html: `<!DOCTYPE html>
+      <html>
+      <body style="margin:0;padding:30px;background:#f5f7fa;font-family:Arial,sans-serif;">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td align="center">
+        <table width="520" cellpadding="0" cellspacing="0" border="0"
+               style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.07);">
+          <tr><td style="height:4px;background:#dc2626;"></td></tr>
+          <tr>
+            <td style="padding:40px 44px;">
+              <h1 style="margin:0 0 16px;color:#111;font-size:24px;font-weight:700;">Admin Access Revoked</h1>
+              <p style="margin:0 0 28px;color:#555;font-size:15px;line-height:1.7;">
+                Hi ${admin.fullName}, your admin access to HiKareers has been revoked.
+                Please contact support if you believe this is a mistake.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 44px;border-top:1px solid #f0f0f0;">
+              <p style="margin:0;color:#aaa;font-size:12px;">© 2025 HiKareers · All rights reserved</p>
+            </td>
+          </tr>
+        </table>
+        </td></tr>
+      </table>
+      </body>
+      </html>`,
+    });
+  } catch (err) {
+    console.log('Revoke email failed:', err.message);
+  }
+
+  return res.status(200).json(
+    new ApiResponse(200, 'Admin revoked successfully', {
+      _id: admin._id,
+      approvalStatus: admin.approvalStatus,
+    })
+  );
 });

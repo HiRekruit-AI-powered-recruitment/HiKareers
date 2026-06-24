@@ -4,44 +4,43 @@ import mongoose from 'mongoose';
 import { User } from '../models/users.models.js';
 import { connectDB } from '../db/index.js';
 
-const seedAdmin = async () => {
+const seedSuperAdmin = async () => {
   try {
     await connectDB();
 
-    const adminEmail = 'admin@hikareers.com';
-    const adminData = {
-      userName: 'hikareers_admin',
-      email: adminEmail,
-      fullName: 'HiKareers Admin',
+    const superAdminEmail = 'admin@hikareers.com';
+    const superAdminData = {
+      fullName: 'HiKareers Super Admin',
+      email: superAdminEmail,
       password: 'Admin@123',
-      userType: 'admin',
+      userType: 'super-admin',
       emailVerified: true,
+      approvalStatus: 'approve',
     };
 
-    const existingAdmin = await User.findOne({ email: adminEmail });
+    const existing = await User.findOne({ email: superAdminEmail });
 
-    if (existingAdmin) {
-      console.log(
-        "Admin user already exists. Updating role ensuring it is 'admin'..."
-      );
-      existingAdmin.userType = 'admin';
-      await existingAdmin.save();
-      console.log('Admin user updated successfully.');
+    if (existing) {
+      console.log('Super admin already exists. Ensuring correct userType...');
+      existing.userType = 'super-admin';
+      existing.approvalStatus = 'approve';
+      await existing.save();
+      console.log('Super admin updated successfully.');
     } else {
-      console.log('Creating new admin user...');
-      await User.create(adminData);
-      console.log('Admin user created successfully.');
+      console.log('Creating new super admin user...');
+      await User.create(superAdminData);
+      console.log('Super admin created successfully.');
     }
 
-    console.log('\nAdmin Credentials:');
-    console.log('Email: ' + adminEmail);
-    console.log('Password: Admin@123');
+    console.log('\nSuper Admin Credentials:');
+    console.log('Email:    ' + superAdminEmail);
+    console.log('Password: SuperAdmin@123');
   } catch (error) {
-    console.error('Error seeding admin user:', error.message);
+    console.error('Error seeding super admin:', error.message);
   } finally {
     await mongoose.connection.close();
     console.log('Database connection closed.');
   }
 };
 
-seedAdmin();
+seedSuperAdmin();

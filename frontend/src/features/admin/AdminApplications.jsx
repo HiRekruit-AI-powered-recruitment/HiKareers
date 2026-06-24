@@ -9,7 +9,7 @@ import {
   Download,
 } from 'lucide-react';
 import { adminAPI } from './api';
-import ApplicationTable from './components/ApplicationTable';
+import { useAuth } from '../../contexts/AuthContext';
 
 const STATUS_CONFIG = {
   APPLIED: {
@@ -156,7 +156,7 @@ function ApplicantRow({ app, onUpdateStatus }) {
   );
 }
 
-function CompanyCard({ companyName, applications, onUpdateStatus }) {
+function JobCard({ job, applications, onUpdateStatus }) {
   const [isOpen, setIsOpen] = useState(false);
 
   const hired = applications.filter((a) => a.currentStatus === 'HIRED').length;
@@ -167,7 +167,7 @@ function CompanyCard({ companyName, applications, onUpdateStatus }) {
   return (
     <div
       className={`bg-white rounded-2xl border transition-all duration-300 overflow-hidden
-            ${isOpen ? 'border-indigo-200 shadow-lg shadow-indigo-100/60' : 'border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300'}`}
+        ${isOpen ? 'border-indigo-200 shadow-lg shadow-indigo-100/60' : 'border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300'}`}
     >
       <button
         onClick={() => setIsOpen((o) => !o)}
@@ -175,16 +175,16 @@ function CompanyCard({ companyName, applications, onUpdateStatus }) {
       >
         <div
           className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors duration-200
-                    ${isOpen ? 'bg-indigo-600' : 'bg-slate-100 group-hover:bg-indigo-50'}`}
+            ${isOpen ? 'bg-indigo-600' : 'bg-slate-100 group-hover:bg-indigo-50'}`}
         >
-          <Building2
+          <Briefcase
             className={`w-5 h-5 transition-colors duration-200 ${isOpen ? 'text-white' : 'text-slate-500 group-hover:text-indigo-600'}`}
           />
         </div>
 
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-slate-900 text-base truncate">
-            {companyName}
+            {job.title}
           </h3>
           <div className="flex items-center gap-3 mt-0.5">
             <span className="flex items-center gap-1 text-xs text-slate-500">
@@ -225,7 +225,7 @@ function CompanyCard({ companyName, applications, onUpdateStatus }) {
 
         <div
           className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300
-                    ${isOpen ? 'bg-indigo-100 rotate-180' : 'bg-slate-100 group-hover:bg-slate-200'}`}
+            ${isOpen ? 'bg-indigo-100 rotate-180' : 'bg-slate-100 group-hover:bg-slate-200'}`}
         >
           <ChevronDown
             className={`w-4 h-4 ${isOpen ? 'text-indigo-600' : 'text-slate-500'}`}
@@ -237,36 +237,45 @@ function CompanyCard({ companyName, applications, onUpdateStatus }) {
         className={`transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}
       >
         <div className="border-t border-slate-100">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                  Applicant
-                </th>
-                <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                  Role
-                </th>
-                <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                  Status
-                </th>
-                <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                  Resume
-                </th>
-                <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide text-right">
-                  Update
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {applications.map((app) => (
-                <ApplicantRow
-                  key={app._id}
-                  app={app}
-                  onUpdateStatus={onUpdateStatus}
-                />
-              ))}
-            </tbody>
-          </table>
+          {applications.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <Users className="w-8 h-8 text-slate-300 mb-2" />
+              <p className="text-sm text-slate-400">
+                No applicants yet for this job.
+              </p>
+            </div>
+          ) : (
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-100">
+                  <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                    Applicant
+                  </th>
+                  <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                    Role
+                  </th>
+                  <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                    Status
+                  </th>
+                  <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                    Resume
+                  </th>
+                  <th className="px-5 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide text-right">
+                    Update
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {applications.map((app) => (
+                  <ApplicantRow
+                    key={app._id}
+                    app={app}
+                    onUpdateStatus={onUpdateStatus}
+                  />
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>
@@ -274,7 +283,8 @@ function CompanyCard({ companyName, applications, onUpdateStatus }) {
 }
 
 export default function AdminApplications() {
-  const [applications, setApplications] = useState([]);
+  // jobsData: [{ job, applications }]
+  const [jobsData, setJobsData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -284,31 +294,46 @@ export default function AdminApplications() {
   const [pendingStatus, setPendingStatus] = useState('');
   const [rejecting, setRejecting] = useState(false);
 
-  useEffect(() => {
-    loadApplications();
-  }, [filterStatus]);
+  const { user } = useAuth();
 
-  async function loadApplications() {
+  useEffect(() => {
+    if (user?._id) loadJobsWithApplications();
+  }, [user?._id, filterStatus]);
+
+  async function loadJobsWithApplications() {
     try {
       setLoading(true);
-      const params = {};
-      if (filterStatus) params.status = filterStatus;
-      const response = await adminAPI.getAllApplications(params);
-      if (response.success) {
-        setApplications(response.data.applications || []);
-      }
+
+      // 1. Fetch all jobs posted by this admin
+      const jobsResponse = await adminAPI.getAdminJobsAll(user._id);
+      if (!jobsResponse.success) return;
+
+      const jobs = jobsResponse.data?.jobs || jobsResponse.data || [];
+
+      // 2. For each job, fetch its applications (with optional status filter)
+      const results = await Promise.all(
+        jobs.map(async (job) => {
+          const appResponse = await adminAPI.getApplicationsForJob(
+            job._id,
+            filterStatus
+          );
+          const applications = appResponse.success
+            ? appResponse.data?.applications || appResponse.data || []
+            : [];
+          return { job, applications };
+        })
+      );
+
+      setJobsData(results);
     } catch (err) {
-      console.error('Failed to load applications:', err);
+      console.error('Failed to load jobs with applications:', err);
     } finally {
       setLoading(false);
     }
   }
 
   const handleUpdateStatus = async (appId, newStatus) => {
-    if (
-      typeof newStatus === 'string' &&
-      newStatus.trim().toUpperCase() === 'REJECTED'
-    ) {
+    if (newStatus.trim().toUpperCase() === 'REJECTED') {
       setSelectedApplicationId(appId);
       setPendingStatus(newStatus);
       setRejectionReason('');
@@ -316,21 +341,26 @@ export default function AdminApplications() {
       return;
     }
 
-    const originalApplications = [...applications];
-    setApplications((prev) =>
-      prev.map((app) =>
-        app._id === appId ? { ...app, currentStatus: newStatus } : app
-      )
+    // Optimistic update across all jobs' application lists
+    setJobsData((prev) =>
+      prev.map(({ job, applications }) => ({
+        job,
+        applications: applications.map((app) =>
+          app._id === appId ? { ...app, currentStatus: newStatus } : app
+        ),
+      }))
     );
+
     try {
       const response = await adminAPI.updateApplicationStatus(appId, newStatus);
       if (!response.success) {
-        setApplications(originalApplications);
+        // Rollback by reloading
+        loadJobsWithApplications();
         alert('Failed to update status. Please try again.');
       }
     } catch (err) {
       console.error('Failed to update status:', err);
-      setApplications(originalApplications);
+      loadJobsWithApplications();
     }
   };
 
@@ -341,13 +371,16 @@ export default function AdminApplications() {
     }
 
     setRejecting(true);
-    const originalApplications = [...applications];
-    setApplications((prev) =>
-      prev.map((app) =>
-        app._id === selectedApplicationId
-          ? { ...app, currentStatus: pendingStatus }
-          : app
-      )
+
+    setJobsData((prev) =>
+      prev.map(({ job, applications }) => ({
+        job,
+        applications: applications.map((app) =>
+          app._id === selectedApplicationId
+            ? { ...app, currentStatus: pendingStatus }
+            : app
+        ),
+      }))
     );
 
     try {
@@ -358,9 +391,7 @@ export default function AdminApplications() {
       );
 
       if (!response.success) {
-        setApplications(originalApplications);
-        setRejecting(false);
-        return;
+        loadJobsWithApplications();
       }
 
       setShowRejectModal(false);
@@ -369,57 +400,55 @@ export default function AdminApplications() {
       setPendingStatus('');
     } catch (err) {
       console.error('Failed to reject application:', err);
+      loadJobsWithApplications();
+    } finally {
       setRejecting(false);
     }
   }
 
-  const filtered = applications.filter((app) => {
-    const q = searchTerm.toLowerCase();
-    return (
-      app.userId?.fullName?.toLowerCase().includes(q) ||
-      app.userId?.email?.toLowerCase().includes(q) ||
-      app.fullName?.toLowerCase().includes(q) ||
-      app.email?.toLowerCase().includes(q) ||
-      app.jobId?.title?.toLowerCase().includes(q) ||
-      app.companyId?.name?.toLowerCase().includes(q) ||
-      app.jobId?.company?.toLowerCase().includes(q)
-    );
-  });
+  // Filter job entries by search term
+  const filteredJobsData = jobsData
+    .map(({ job, applications }) => {
+      const q = searchTerm.toLowerCase();
+      const filteredApps = applications.filter(
+        (app) =>
+          app.userId?.fullName?.toLowerCase().includes(q) ||
+          app.userId?.email?.toLowerCase().includes(q) ||
+          app.fullName?.toLowerCase().includes(q) ||
+          app.email?.toLowerCase().includes(q) ||
+          job.title?.toLowerCase().includes(q)
+      );
+      // Also show the job card if its title matches even with no matching apps
+      const jobMatches = job.title?.toLowerCase().includes(q);
+      return {
+        job,
+        applications: jobMatches && !q ? applications : filteredApps,
+        visible: jobMatches || filteredApps.length > 0 || !q,
+      };
+    })
+    .filter((entry) => entry.visible);
 
-  const grouped = filtered.reduce((acc, app) => {
-    const company =
-      app.companyId?.name ||
-      app.jobId?.company ||
-      app.jobId?.companyId?.name ||
-      'Unknown Company';
-    if (!acc[company]) acc[company] = [];
-    acc[company].push(app);
-    return acc;
-  }, {});
-
-  const companyEntries = Object.entries(grouped).sort(
-    (a, b) => b[1].length - a[1].length
+  const totalJobs = filteredJobsData.length;
+  const totalApplicants = filteredJobsData.reduce(
+    (sum, { applications }) => sum + applications.length,
+    0
   );
-  const totalApplicants = filtered.length;
-  const totalCompanies = companyEntries.length;
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900">
-          All Job Applicants
-        </h1>
+        <h1 className="text-2xl font-bold text-slate-900">My Job Postings</h1>
         <p className="text-slate-500 mt-1 text-sm">
-          Manage and review applicants across all your job postings.
+          Manage applicants across all your posted jobs.
         </p>
         {!loading && (
           <div className="flex items-center gap-4 mt-4">
             <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-2.5 flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-indigo-500" />
+              <Briefcase className="w-4 h-4 text-indigo-500" />
               <span className="text-sm font-bold text-indigo-700">
-                {totalCompanies}
+                {totalJobs}
               </span>
-              <span className="text-sm text-indigo-500">Companies</span>
+              <span className="text-sm text-indigo-500">Jobs</span>
             </div>
             <div className="bg-violet-50 border border-violet-100 rounded-xl px-4 py-2.5 flex items-center gap-2">
               <Users className="w-4 h-4 text-violet-500" />
@@ -432,12 +461,13 @@ export default function AdminApplications() {
         )}
       </div>
 
+      {/* Search & Filter */}
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-6 flex flex-col md:flex-row gap-3 items-center">
         <div className="relative flex-1 w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search by name, email, job title or company..."
+            placeholder="Search by name, email or job title..."
             className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none transition-all text-sm text-slate-700 placeholder:text-slate-400"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -451,7 +481,7 @@ export default function AdminApplications() {
             onChange={(e) => setFilterStatus(e.target.value)}
           >
             <option value="">All Statuses</option>
-            <option value="APPLIED">Applied (Default)</option>
+            <option value="APPLIED">Applied</option>
             <option value="SHORTLISTED">Shortlisted</option>
             <option value="INTERVIEW">Interview</option>
             <option value="HIRED">Hired</option>
@@ -468,23 +498,23 @@ export default function AdminApplications() {
             <div className="absolute inset-0 w-12 h-12 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin" />
           </div>
         </div>
-      ) : companyEntries.length === 0 ? (
+      ) : filteredJobsData.length === 0 ? (
         <div className="flex flex-col items-center justify-center min-h-[30vh] text-center">
           <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
-            <Building2 className="w-8 h-8 text-slate-400" />
+            <Briefcase className="w-8 h-8 text-slate-400" />
           </div>
-          <p className="font-semibold text-slate-700">No applicants found</p>
+          <p className="font-semibold text-slate-700">No jobs found</p>
           <p className="text-slate-400 text-sm mt-1">
-            Try adjusting your search or filter.
+            You haven't posted any jobs yet, or none match your search.
           </p>
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          {companyEntries.map(([companyName, apps]) => (
-            <CompanyCard
-              key={companyName}
-              companyName={companyName}
-              applications={apps}
+          {filteredJobsData.map(({ job, applications }) => (
+            <JobCard
+              key={job._id}
+              job={job}
+              applications={applications}
               onUpdateStatus={handleUpdateStatus}
             />
           ))}

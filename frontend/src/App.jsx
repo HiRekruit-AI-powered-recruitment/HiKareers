@@ -37,17 +37,19 @@ import EmployerDashboard from './features/Employers/EmployerDashboard';
 import ForgotPassword from './features/auth/ForgotPassword';
 import ResetPassword from './features/auth/ResetPassword';
 import SavedJobs from './features/jobs/SavedJobs';
+import AdminSignup from './features/admin/AdminSignup';
+import AdminLogin from './features/admin/AdminLogin';
+import SuperAdminDashboard from './features/super-admin/SuperAdminDashboard';
+import SuperAdminAllJobs from './features/super-admin/Superadminalljobs';
 
 function AppContent() {
   const { user } = useAuth();
-
   const resumes = user?.resumes?.['1'] ? [user.resumes['1']] : [];
 
   return (
     <ProfileCompletionProvider user={user}>
       <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header />
-
         <main className="flex-1">
           <Routes>
             <Route path="/login" element={<Login />} />
@@ -62,7 +64,6 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
-
             <Route
               path="/profile/edit"
               element={
@@ -71,7 +72,6 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
-
             <Route
               path="/apply"
               element={
@@ -80,7 +80,6 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
-
             <Route
               path="/apply/:jobId"
               element={
@@ -89,7 +88,6 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
-
             <Route
               path="/applications"
               element={
@@ -98,7 +96,6 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
-
             <Route
               path="/saved-jobs"
               element={
@@ -117,7 +114,6 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
-
             <Route
               path="/admin/jobs/new"
               element={
@@ -126,7 +122,6 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
-
             <Route
               path="/admin/applications"
               element={
@@ -135,7 +130,6 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
-
             <Route
               path="/admin/jobs/:jobId/applications"
               element={
@@ -144,7 +138,6 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
-
             <Route
               path="/admin/jobs"
               element={
@@ -153,7 +146,6 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
-
             <Route
               path="/admin/jobs/:jobId/edit"
               element={
@@ -163,10 +155,27 @@ function AppContent() {
               }
             />
 
+            {/* Super Admin Routes */}
+            <Route
+              path="/super-admin/dashboard"
+              element={
+                <ProtectedRoute roles={['super-admin']}>
+                  <SuperAdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/super-admin/jobs"
+              element={
+                <ProtectedRoute roles={['super-admin']}>
+                  <SuperAdminAllJobs />
+                </ProtectedRoute>
+              }
+            />
+
             <Route path="/interview" element={<MockInterview />} />
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/jobs/:jobId" element={<JobDetails />} />
-
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/help" element={<HelpCenter />} />
@@ -176,16 +185,16 @@ function AppContent() {
             <Route path="/employer-dashboard" element={<EmployerDashboard />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
+            <Route path="/admin/signup" element={<AdminSignup />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
           </Routes>
         </main>
-
         <Footer />
       </div>
     </ProfileCompletionProvider>
   );
 }
 
-// 🔥 Root App
 function App() {
   return (
     <AuthProvider>
